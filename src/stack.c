@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#define MIN_STACK_SIZE 1024
+
 static inline int stack_peek(stack *s)
 {
         if(s->ptr == 0)
@@ -46,4 +48,9 @@ static inline int stack_push(stack *s, int type)
                 s->stack[offset] &= ~mask;
         s->ptr++;
         return 0;
+}
+
+static unsigned get_stack_size(unsigned max_nesting)
+{
+        return max_nesting > MIN_STACK_SIZE ? max_nesting : MIN_STACK_SIZE;
 }

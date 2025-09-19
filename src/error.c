@@ -9,16 +9,16 @@
 #include <stdio.h>
 
 static const char *error_msgs[] = {
-        [JSNPG_ERROR_OPT]              = "Invalid option",
-        [JSNPG_ERROR_ALLOC]            = "Out of memory",
-        [JSNPG_ERROR_NUMBER]           = "Invalid number",
+        [JSNPG_ERROR_OPT]               = "Invalid option",
+        [JSNPG_ERROR_ALLOC]             = "Out of memory",
+        [JSNPG_ERROR_NUMBER]            = "Invalid number",
         [JSNPG_ERROR_UTF8]	        = "Invalid UTF-8",
-        [JSNPG_ERROR_SURROGATE]	= "Invalid surrogate",
+        [JSNPG_ERROR_SURROGATE]	        = "Invalid surrogate",
         [JSNPG_ERROR_STACK_OVERFLOW]	= "Stack overflow",
         [JSNPG_ERROR_STACK_UNDERFLOW]	= "Stack underflow",
         [JSNPG_ERROR_EXPECTED_VALUE]	= "Value expected",
         [JSNPG_ERROR_EXPECTED_KEY]	= "Key expected",
-        [JSNPG_ERROR_NO_OBJECT]	= "Not in object",
+        [JSNPG_ERROR_NO_OBJECT]	        = "Not in object",
         [JSNPG_ERROR_NO_ARRAY]	        = "Not in array",
         [JSNPG_ERROR_ESCAPE]	        = "Invalid escape",
         [JSNPG_ERROR_UNEXPECTED]	= "Unexpected input",

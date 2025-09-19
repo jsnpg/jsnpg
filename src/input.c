@@ -21,6 +21,9 @@ static memory_input_stream *mis_new(allocator *a)
 {
         memory_input_stream *mis = allocator_alloc(a, sizeof(memory_input_stream));
 
+        if(!mis)
+                return NULL;
+
         mis->count = 0;
         mis->start = NULL;
         mis->string = NULL;

@@ -8,12 +8,6 @@ types of parsing see [Json Parsing](#json-parsing).
 What is considered "standard" JSON, and which variants Jsnpg supports, is 
 discussed in [JSON Variants](#json-variants).
 
-Generated JSON is buffered and can be retrieved when complete.  Although
-quite straightforward the functions to produce each item of a JSON document
-can become quite verbose.  See [Optional Macros](#optional-macros) for an
-example of how macros can make the generation of JSON more succinct, 
-and hopefully more readable.
-
 ## SAX Parsing
 
 To perform a SAX parse jsnpg needs 4 things:
@@ -24,7 +18,7 @@ To perform a SAX parse jsnpg needs 4 things:
 
 
 ```C
-#include <libjsnpg/jsnpg.h>
+#include <jsnpg/jsnpg.h>
 
 // Provide a handler function for each callback  
 // that you wish to receive.  
@@ -79,7 +73,7 @@ jsnpg_result result = jsnpg_parse(
 
 ```
 
-## Generating JSON {#generating-json}
+## Generating JSON
 The example below illustrates how to generate the following JSON
 as a string with no whitespace, or pretty printed with a given
 indentation.
@@ -96,7 +90,7 @@ indentation.
 
 
 ```C
-#include <libjsnpg/jsnpg.h>
+#include <jsnpg/jsnpg.h>
 
 jsnpg_generator *gen = jsnpg_generator_new();
 
@@ -145,9 +139,9 @@ unsigned char *json_bytes;
 size_t length = jsnpg_result_bytes(gen, &json_bytes);
 ```
 
-The pointers returned from these functions are only valid as long
-as the generator that produced them so make sure that you are 
-finished with them before calling jsnpg_generator_free.
+The pointers returned from these functions are freed when the
+generator is freed so make sure that you are finished with them 
+before calling jsnpg_generator_free.
 
 ```C
 // do something with result
@@ -155,7 +149,7 @@ finished with them before calling jsnpg_generator_free.
 jsnpg_generator_free(gen);
 ```
 
-# Optional Macros {#optional-macros}
+# Optional Macros
 In the section on [Generating JSON](#generating-json) we gave an example of
 using a generator to produce the following JSON.
 
@@ -169,7 +163,7 @@ using a generator to produce the following JSON.
 }
 ```
 
-The header files <libjsnpg/def_gen_macros.h> and <libjsnpg/undef_gen_macros.h> can
+The header files <jsnpg/def_gen_macros.h> and <jsnpg/undef_gen_macros.h> can
 be used to define macros that make the production of JSON a little easier.
 
 
@@ -179,15 +173,16 @@ be used to define macros that make the production of JSON a little easier.
 >clashes or to conform to coding guidelines.
 
 ```
-#include <libjsnpg/jsnpg.h>
+#include <jsnpg/jsnpg.h>
 
-jsnpg_generator *gen = jsnpg_generator_new();
+jsnpg_generator *my_gen = jsnpg_generator_new();
 
 // Tell the macros the name of the variable holding the 
 // generator (defaults to 'gen') 
-// #define JSNPG_GEN      gen
 
-#include <libjsnpg/def_gen_macros.h>
+#define JSNPG_GEN      my_gen
+
+#include <jsnpg/def_gen_macros.h>
 
 object(
     keyval("length", integer(123)),
@@ -198,13 +193,14 @@ object(
                          null())
 );
 
-#include <libjsnpg/undef_gen_macros.h>
+#include <jsnpg/undef_gen_macros.h>
 ```
+
 
 >As macro expansion creates a single statement it would be advisable to keep the
 >use of the object() and array() macros for small amounts of data.  
->Surround larger amounts of data with start_object(); and end_object(); 
->or start_array(); and end_array();
+>Surround larger amounts of data with start_object() and end_object() 
+>or start_array() and end_array()
 
 
 

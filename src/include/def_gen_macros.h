@@ -1,5 +1,5 @@
 /*
- * Macros to make writing JSN via a generator more concise
+ * Macros to make writing JSON via a generator more concise
  *
  * // This define specifies the name of your generator variable
  * // defaults to 'gen' 

@@ -8,7 +8,7 @@
  *   2 - delivers user generated events to produce JSON output
  *
  *   during development/testing it will assert() that the events make
- *   a valid JSON document (for example,  [2} will be rejected)
+ *   a valid JSON document (for example,  "[2}" will be rejected)
  */
 #include <assert.h>
 
@@ -203,8 +203,9 @@ generator *jsnpg_generator_new_opt(generator_opts opts)
                 return NULL;
         
         unsigned indent = opts.indent <= 8 ? opts.indent : 8;
+        unsigned stack_size = get_stack_size(opts.max_nesting);
 
-        generator *g = generator_new(opts.max_nesting, flags);
+        generator *g = generator_new(stack_size, flags);
         if(!g)
                 return NULL;
 

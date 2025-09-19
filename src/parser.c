@@ -13,8 +13,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define MIN_STACK_SIZE 1024
-
 static inline bool parser_in_object(parser *p)
 {
         return stack_peek(&p->stack) == STACK_OBJECT;
@@ -479,11 +477,6 @@ static void parser_set_bytes(parser *p, byte *bytes, size_t count)
 static void parser_set_dom_info(parser *p, dom_info di)
 {
         p->dom_info = di;
-}
-
-static inline unsigned get_stack_size(unsigned stack_size)
-{
-        return stack_size > MIN_STACK_SIZE ? stack_size : MIN_STACK_SIZE;
 }
 
 static parser *parser_new(allocator *a, unsigned stack_size, unsigned flags)
