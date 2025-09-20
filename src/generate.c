@@ -161,8 +161,10 @@ static generator *generator_new(unsigned stack_size, unsigned flags)
                 return NULL;
         generator *g = allocator_alloc(a, sizeof(generator)
                         + (stack_size >> 3));
-        if(!g)
+        if(!g) {
+                allocator_free(a);
                 return NULL;
+        }
 
         g->allocator = a;
         g->key_next = false;

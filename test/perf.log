@@ -1,0 +1,103 @@
+
+Performance statistics: Sat 20 Sep 18:08:23 BST 2025
+
+Type: 14, Returned 0
+
+ Performance counter stats for './testutil -t 1 json/input/canada.json':
+
+              7.37 msec task-clock:u                     #    0.956 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+             1,712      page-faults:u                    #  232.137 K/sec                     
+        82,438,800      instructions:u                   #    5.61  insn per cycle            
+                                                  #    0.01  stalled cycles per insn     (72.75%)
+        14,683,409      cycles:u                         #    1.991 GHz                         (72.91%)
+           463,161      stalled-cycles-frontend:u        #    3.15% frontend cycles idle        (73.36%)
+         9,473,498      branches:u                       #    1.285 G/sec                       (72.88%)
+            19,529      branch-misses:u                  #    0.21% of all branches             (72.89%)
+        14,017,806      L1-dcache-loads:u                #    1.901 G/sec                       (67.44%)
+           288,723      L1-dcache-load-misses:u          #    2.06% of all L1-dcache accesses   (67.77%)
+
+       0.007711809 seconds time elapsed
+
+       0.004372000 seconds user
+       0.003294000 seconds sys
+
+
+
+Type: 14, Returned 0
+
+ Performance counter stats for './testutil -t 1 json/input/citm_catalog.json':
+
+              4.53 msec task-clock:u                     #    0.918 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+               914      page-faults:u                    #  201.933 K/sec                     
+        44,496,609      instructions:u                   #    7.49  insn per cycle            
+                                                  #    0.01  stalled cycles per insn     (56.62%)
+         5,941,683      cycles:u                         #    1.313 GHz                         (56.41%)
+           238,907      stalled-cycles-frontend:u        #    4.02% frontend cycles idle        (55.82%)
+         4,294,288      branches:u                       #  948.750 M/sec                       (73.10%)
+            10,754      branch-misses:u                  #    0.25% of all branches             (95.20%)
+         7,878,323      L1-dcache-loads:u                #    1.741 G/sec                       (92.36%)
+           204,207      L1-dcache-load-misses:u          #    2.59% of all L1-dcache accesses   (70.49%)
+
+       0.004932859 seconds time elapsed
+
+       0.001940000 seconds user
+       0.002933000 seconds sys
+
+
+
+Type: 14, Returned 0
+
+ Performance counter stats for './testutil -t 1 json/input/twitter.json':
+
+              2.35 msec task-clock:u                     #    0.874 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+               446      page-faults:u                    #  190.135 K/sec                     
+           620,144      instructions:u                   #    0.23  insn per cycle            
+                                                  #    0.51  stalled cycles per insn     (20.25%)
+         2,695,380      cycles:u                         #    1.149 GHz                         (62.80%)
+           318,080      stalled-cycles-frontend:u        #   11.80% frontend cycles idle      
+         3,060,271      branches:u                       #    1.305 G/sec                     
+            25,684      branch-misses:u                  #    0.84% of all branches           
+         3,655,523      L1-dcache-loads:u                #    1.558 G/sec                       (79.75%)
+            61,577      L1-dcache-load-misses:u          #    1.68% of all L1-dcache accesses   (37.20%)
+
+       0.002684259 seconds time elapsed
+
+       0.001335000 seconds user
+       0.001350000 seconds sys
+
+
+
+Type: 14, Returned 0
+
+ Performance counter stats for './testutil -t 1 json/input/pass01.json':
+
+              0.27 msec task-clock:u                     #    0.472 CPUs utilized             
+                 0      context-switches:u               #    0.000 /sec                      
+                 0      cpu-migrations:u                 #    0.000 /sec                      
+                64      page-faults:u                    #  234.785 K/sec                     
+           165,897      instructions:u                   #    0.75  insn per cycle            
+                                                  #    0.50  stalled cycles per insn   
+           222,286      cycles:u                         #    0.815 GHz                       
+            83,109      stalled-cycles-frontend:u        #   37.39% frontend cycles idle      
+            34,898      branches:u                       #  128.024 M/sec                     
+             3,492      branch-misses:u                  #   10.01% of all branches           
+     <not counted>      L1-dcache-loads:u                                                       (0.00%)
+     <not counted>      L1-dcache-load-misses:u                                                 (0.00%)
+
+       0.000577390 seconds time elapsed
+
+       0.000000000 seconds user
+       0.000606000 seconds sys
+
+
+Some events weren't counted. Try disabling the NMI watchdog:
+	echo 0 > /proc/sys/kernel/nmi_watchdog
+	perf stat ...
+	echo 1 > /proc/sys/kernel/nmi_watchdog
+=====================================================================

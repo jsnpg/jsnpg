@@ -5,34 +5,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../include/jsnpg.h"
-
-
-char *type_name(jsnpg_type type) {
-        static char *names[] = {
-                "None",
-                "Pull",
-                "Null",
-                "False",
-                "True",
-                "Integer",
-                "Real",
-                "String",
-                "Key",
-                "[",
-                "]",
-                "{",
-                "}",
-                "Error",
-                "EOF"
-        };
-        return names[type];
-}
+#include "../src/include/jsnpg.h"
 
 int main(int argc, char *argv[])
 {
         jsnpg_generator *g;
-        jsnpg_result res;
+        jsnpg_result res = {};
         if(argc == 3) {
                 if(0 == strcmp("-e", argv[1])) {
                         puts(argv[2]);
@@ -43,7 +21,7 @@ int main(int argc, char *argv[])
                         g = jsnpg_generator_new(.indent = 2);
                         res = jsnpg_parse(.bytes = buf, .count = len, .generator = g);
                         char *s = jsnpg_result_string(g);
-                        printf(s);
+                        printf("%s", s);
                         jsnpg_generator_free(g);
                         if(JSNPG_ERROR == res.type) {
                                 printf("Error: %d\n", res.error.code);
@@ -61,14 +39,14 @@ int main(int argc, char *argv[])
                         FILE *fh = fopen(argv[3], "rb");
                         if(fh) {
                                 fseek(fh, 0L, SEEK_END);
-                                long length = ftell(fh);
+                                size_t length = (size_t)ftell(fh);
                                 rewind(fh);
                                 uint8_t *buf = malloc(length + 1);
                                 if(buf) {
                                         fread(buf, length, 1, fh);
                                         res = (jsnpg_result){};
                                         for(int i = 0 ; i < times ; i++) {
-                                                jsnpg_generator *g = jsnpg_generator_new(.dom = true, .max_nesting = 0);
+                                                g = jsnpg_generator_new(.dom = true, .max_nesting = 0);
                                                 res = jsnpg_parse(.bytes = buf, .count = length, .generator = g);
                                                 if(res.type == JSNPG_ERROR) {
                                                         printf("Parse failed: %d at %ld\n", res.error.code, res.position);

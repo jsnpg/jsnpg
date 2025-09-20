@@ -1,1 +1,15 @@
-.
+# install cmake
+
+mkdir build && cd build
+
+# cmake installs to /usr/local by default,
+# to override set CMAKE_INSTALL_PREFIX
+
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+
+make
+
+# make test
+
+sudo make install
+
