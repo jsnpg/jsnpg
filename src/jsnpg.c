@@ -9,6 +9,7 @@
 #include "include/jsnpg.h"
 #include "common.h"
 #include "types.h"
+#include "bytemap.h"
 #include "generate.h"
 #include "dom.h"
 
@@ -19,6 +20,7 @@
 //#define JSNPG_DEBUG
 #include "debug.c"
 #include "alloc.c"
+#include "bytemap.c"
 #include "utf8.c"
 #include "input.c"
 #include "error.c"

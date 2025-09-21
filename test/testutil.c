@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
                                         fread(buf, length, 1, fh);
                                         res = (jsnpg_result){};
                                         for(int i = 0 ; i < times ; i++) {
-                                                g = jsnpg_generator_new(.dom = true, .max_nesting = 0);
+                                                g = jsnpg_generator_new(.max_nesting = 0);
                                                 res = jsnpg_parse(.bytes = buf, .count = length, .generator = g);
                                                 if(res.type == JSNPG_ERROR) {
                                                         printf("Parse failed: %d at %ld\n", res.error.code, res.position);

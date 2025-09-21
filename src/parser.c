@@ -232,7 +232,7 @@ static inline byte mis_consume_whitespace(memory_input_stream *mis)
 {
         byte c;
 
-        while((c = mis_peek(mis)) == ' ' || c == '\n' || c == '\r' || c== '\t')
+        while(byte_map[(c = mis_peek(mis))] & BYTE_WHITESPACE)
                  mis_take(mis);
 
         return c;
@@ -285,7 +285,11 @@ static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validat
         mis_string_start(mis);
 
         while(true) {
-                byte c = mis_peek(mis);
+                unsigned type;
+                byte c;
+                while((type = byte_map[(c = mis_peek(mis))]) & BYTE_ASCII_STRING)
+                        mis_take(mis);
+
                 if(c == '"') {
                         return mis_string_complete(mis, bytes);
                 } else if(c == '\\') {
@@ -293,13 +297,42 @@ static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validat
                         unsigned codepoint = parse_escape(p);
                         utf8_encode(codepoint, mis_writer(mis));
                         mis_string_restart(mis);
-                } else if(validate_utf8 && c >= 0x80) {
-                        if(!mis_validate_utf8(mis))
-                                throw_parse_error(p, JSNPG_ERROR_UTF8);
-                } else if(c < 0x20) {
-                        throw_parse_error(p, JSNPG_ERROR_INVALID);
-                } else {
+                } else if(validate_utf8) {
                         mis_take(mis);
+                        if(type & BYTE_LEADER_2) {
+                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
+                                mis_take(mis);
+                        } else if(type & BYTE_LEADER_3) {
+                                unsigned next = byte_map_next[c];
+                                if(!(byte_map[c = mis_peek(mis)] & next))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
+                                mis_take(mis);
+                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
+                                mis_take(mis);
+                        } else if(type & BYTE_LEADER_4) {
+                                unsigned next = byte_map_next[c];
+                                if(c == 0xF0) 
+                                        next = BYTE_F0_NEXT;
+                                else if(c == 0xF4)
+                                        next = BYTE_F4_NEXT;
+                                else
+                                        next = BYTE_CONTINUATION;
+                                if(!(byte_map[c = mis_peek(mis)] & next))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
+                                mis_take(mis);
+                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
+                                mis_take(mis);
+                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
+                                mis_take(mis);
+                        } else {
+                                throw_parse_error(p, JSNPG_ERROR_UTF8);
+                        }
+                } else { // if(c < 0x20) {
+                        throw_parse_error(p, JSNPG_ERROR_INVALID);
                 }
         }
 }
