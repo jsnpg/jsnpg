@@ -155,18 +155,12 @@ static inline bool jos_puts(json_output_stream *jos, const byte *string, size_t 
 static inline size_t find_next_special(
                 const byte *string, 
                 size_t count, 
-                size_t start, 
-                const bool validate_utf8)
+                size_t start)
 {
         size_t i;
-        for(i = start ; i < count ; i++) {
-                byte chr = string[i];
-                if(chr == '"' 
-                                || chr == '\\' 
-                                || chr < 0x20 
-                                || (validate_utf8 && chr >= 0x80))
+        for(i = start ; i < count ; i++)
+                if(!(byte_map[string[i]] & BYTE_ASCII_STRING))
                         return i;
-        }
         return i;
 }
 
@@ -197,21 +191,42 @@ static bool jos_scan_escape(json_output_stream *jos, const byte *string, size_t 
         byte chr;
         byte *s;
 
-        while(count > (pmos2 = find_next_special(string, count, pmos1, validate_utf8))) {
+        while(count > (pmos2 = find_next_special(string, count, pmos1))) {
                 chr = string[pmos2];
 
                 if(!mos_puts(mos, string + pmos1, pmos2 - pmos1))
                         return false;
                 
-                if(validate_utf8 && chr >= 0x80) {
-                        int len = utf8_validate_sequence(string + pmos2, count - pmos2);
-                        if(len == -1) {
+                if(chr >= 0x80) {
+                        unsigned type = byte_map[chr];
+                        bool ok = true;
+                        const byte *utf8 = string + pmos2;
+                        size_t len = 1;
+                        if(!validate_utf8) { 
+                                while(utf8[len] >= 0x80)
+                                        len++;
+                        } else if(type & BYTE_LEADER_2) {
+                                ok = byte_map[utf8[len++]] & BYTE_CONTINUATION;
+                        } else if(type & BYTE_LEADER_3) {
+                                unsigned next = byte_map_extra[chr];
+                                ok = (byte_map[utf8[len++]] & next)
+                                        && (byte_map[utf8[len++]] & BYTE_CONTINUATION);
+                        } else if(type & BYTE_LEADER_4) {
+                                unsigned next = byte_map_extra[chr];
+                                ok = (byte_map[utf8[len++]] & next)
+                                        && (byte_map[utf8[len++]] & BYTE_CONTINUATION)
+                                        && (byte_map[utf8[len++]] & BYTE_CONTINUATION);
+                        } else {
+                                ok = false;
+                        }
+                        if(!ok) {
                                 jos->generator->error = make_error(JSNPG_ERROR_UTF8);
                                 return false;
                         }
                         if(!mos_puts(mos, string + pmos2, (size_t)len))
                                 return false;
-                        pmos1 = pmos2 + (size_t)len;
+                        pmos1 = pmos2 + len;
+
                 } else {
                         // chr will be < 0x20, '"' or '\\'
                         byte e = c_escapes[chr];

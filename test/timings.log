@@ -35,3 +35,40 @@ real	0m0.004s
 user	0m0.004s
 sys	0m0.000s
 =====================================================================
+
+Performance timings: Sun 21 Sep 22:58:38 BST 2025
+
+commit 35faf010544c3c3bb15556b1b23484c375f7c3a1
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Sun Sep 21 19:52:08 2025 +0100
+
+    Introduced byte_map
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+
+real	0m6.721s
+user	0m5.563s
+sys	0m1.135s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+
+real	0m1.495s
+user	0m1.485s
+sys	0m0.005s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+
+real	0m1.023s
+user	0m1.017s
+sys	0m0.003s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+
+real	0m0.004s
+user	0m0.003s
+sys	0m0.001s
+=====================================================================

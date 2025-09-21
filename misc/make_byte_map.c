@@ -62,9 +62,9 @@ int main()
                 else if(i == '/')
                         mask = BYTE_ASCII_STRING | BYTE_COMMENT | BYTE_ESCAPE;
                 else if(i == '0')
-                        mask = BYTE_ASCII_STRING | BYTE_0 | BYTE_0_9;
+                        mask = BYTE_ASCII_STRING | BYTE_0 | BYTE_0_9 | BYTE_HEX_DIGIT;
                 else if(i <= '9')
-                        mask = BYTE_ASCII_STRING | BYTE_0_9 | BYTE_1_9;
+                        mask = BYTE_ASCII_STRING | BYTE_0_9 | BYTE_1_9| BYTE_HEX_DIGIT;
                 else if(i == ':')
                         mask = BYTE_ASCII_STRING | BYTE_COLON;
                 else if(i < 'A')
@@ -97,8 +97,6 @@ int main()
                         mask = BYTE_CONTINUATION | BYTE_ED_NEXT | BYTE_F4_NEXT;
                 else if(i <= 0x9F)
                         mask = BYTE_CONTINUATION | BYTE_ED_NEXT | BYTE_F0_NEXT;
-                else if(i <= 0xA0)
-                        mask = BYTE_CONTINUATION | BYTE_F0_NEXT;
                 else if(i <= 0xBF)
                         mask = BYTE_CONTINUATION | BYTE_E0_NEXT | BYTE_F0_NEXT;
                 else if(i >= 0xC2 && i <= 0xDF)
@@ -131,23 +129,31 @@ int main()
         }
         printf("\n};");
 
-        printf("\nstatic const unsigned byte_map_next[] = {");
+        printf("\nstatic const unsigned byte_map_extra[] = {");
         for(int i = 0 ; i < 256 ; i++) {
-                unsigned next;
+                unsigned extra;
 
+                // Extra for hex digits is their value
+                if(i >= '0' && i <= '9')
+                        extra = i - '0';
+                else if(i >= 'A' && i <= 'F')
+                        extra = 10 + i - 'A';
+                else if(i >= 'a' && i <= 'f')
+                        extra = 10 + i - 'a';
 
-                if(i == 0xE0)
-                        next = BYTE_E0_NEXT;
+                // extra for UTF-8 leaders is their first continuation
+                else if(i == 0xE0)
+                        extra = BYTE_E0_NEXT;
                 else if(i == 0xED)
-                        next = BYTE_ED_NEXT;
+                        extra = BYTE_ED_NEXT;
                 else if(i == 0xF0)
-                        next = BYTE_F0_NEXT;
+                        extra = BYTE_F0_NEXT;
                 else if(i == 0xF4)
-                        next = BYTE_F4_NEXT;
+                        extra = BYTE_F4_NEXT;
                 else if(i >= 0xC2 && i < 0xF4)
-                        next = BYTE_CONTINUATION;
+                        extra = BYTE_CONTINUATION;
                 else
-                        next = 0;
+                        extra = 0;
 
                if(i == 0)
                         printf("\n        ");
@@ -156,7 +162,7 @@ int main()
                 else
                         printf(", ");
 
-                printf("0x%X", next);
+                printf("0x%X", extra);
         }
         printf("\n};");
 

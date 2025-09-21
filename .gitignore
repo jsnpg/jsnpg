@@ -1,4 +1,5 @@
 build/
+misc/make_byte_map
 test/json/failed/
 test/jsnpgtest
 test/testutil

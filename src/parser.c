@@ -167,15 +167,11 @@ static unsigned parse_hex4(parser *p)
         unsigned codepoint = 0;
         for(int i = 0 ; i < 4 ; i++) {
                 byte c = mis_peek(mis);
-                codepoint <<= 4;
-                if(c >= '0' && c <= '9')
-                        codepoint += (unsigned)(c - '0');
-                else if(c >= 'A' && c <= 'F')
-                        codepoint += 10 + (unsigned)(c - 'A');
-                else if(c >= 'a' && c <= 'f')
-                        codepoint += 10 + (unsigned)(c - 'a');
-                else 
+                if(!(byte_map[c] & BYTE_HEX_DIGIT))
                         throw_parse_error(p, JSNPG_ERROR_ESCAPE);
+
+                codepoint <<= 4;
+                codepoint += byte_map_extra[c];
 
                 mis_take(mis);
         }
@@ -234,7 +230,7 @@ static inline byte mis_consume_whitespace(memory_input_stream *mis)
 
         while(byte_map[(c = mis_peek(mis))] & BYTE_WHITESPACE)
                  mis_take(mis);
-
+       
         return c;
 
 }
@@ -297,35 +293,32 @@ static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validat
                         unsigned codepoint = parse_escape(p);
                         utf8_encode(codepoint, mis_writer(mis));
                         mis_string_restart(mis);
-                } else if(validate_utf8) {
+                } else if(c >= 0x80) {
                         mis_take(mis);
-                        if(type & BYTE_LEADER_2) {
-                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                        if(!validate_utf8) {
+                                while(mis_peek(mis) >= 0x80)
+                                        mis_take(mis);
+                        }else if(type & BYTE_LEADER_2) {
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
                                         throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
                         } else if(type & BYTE_LEADER_3) {
-                                unsigned next = byte_map_next[c];
-                                if(!(byte_map[c = mis_peek(mis)] & next))
+                                unsigned next = byte_map_extra[c];
+                                if(!(byte_map[mis_peek(mis)] & next))
                                         throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
                                         throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
                         } else if(type & BYTE_LEADER_4) {
-                                unsigned next = byte_map_next[c];
-                                if(c == 0xF0) 
-                                        next = BYTE_F0_NEXT;
-                                else if(c == 0xF4)
-                                        next = BYTE_F4_NEXT;
-                                else
-                                        next = BYTE_CONTINUATION;
-                                if(!(byte_map[c = mis_peek(mis)] & next))
+                                unsigned next = byte_map_extra[c];
+                                if(!(byte_map[mis_peek(mis)] & next))
                                         throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
                                         throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                                if(!(byte_map[c = mis_peek(mis)] & BYTE_CONTINUATION))
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
                                         throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
                         } else {
