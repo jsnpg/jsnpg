@@ -235,12 +235,18 @@ static inline byte mis_consume_whitespace(memory_input_stream *mis)
 
 }
 
-static byte consume_whitespace(parser *p, bool allow_comments)
+static byte consume_whitespace(parser *p, const bool allow_comments)
 {
         memory_input_stream *const mis = p->mis;
-        byte c;
+
+        byte c = mis_peek(mis);
+
+        if(!((byte_map[c] & BYTE_WHITESPACE) || (allow_comments && c == '/')))
+                return c;
 
         if(!allow_comments) {
+                mis_take(mis); // c, whitespace
+
                 return mis_consume_whitespace(mis);
         }
 
@@ -484,25 +490,36 @@ static json_type parse_number(parser *p, double *real_result, long *integer_resu
 }
 #pragma GCC diagnostic pop
 
-static void parser_set_bytes(parser *p, byte *bytes, size_t count)
+static parser *parser_set_bytes(parser *p, byte *bytes, size_t count, bool writeable)
 {
         // Skip leading byte order mark
         unsigned skip = utf8_bom_bytes(bytes, count);
         bytes += skip;
         count -= skip;
+        byte *b;
 
-        // The advantages of having a null terminated, writeable, byte array
-        // outweighs the cost of copying
-        byte *b = allocator_alloc(p->allocator, count + 1);
-        memcpy(b, bytes, count);
-        b[count] = '\0';
+        // If not writeable, we make a copy, as the advantages of having a null
+        // terminated, padded, writeable, byte array outweighs the cost of copying
+        if(writeable) {
+                b = bytes;
+        } else {
+                b = allocator_alloc(p->allocator, count + 8);
+                if(!b)
+                        return NULL;
+                memcpy(b, bytes, count);
+        }
+
+        memset(b + count, '\0', 8); 
 
         mis_set_bytes(p->mis, b, count);
+
+        return p;
 }
 
-static void parser_set_dom_info(parser *p, dom_info di)
+static parser *parser_set_dom_info(parser *p, dom_info di)
 {
         p->dom_info = di;
+        return p;
 }
 
 static parser *parser_new(allocator *a, unsigned stack_size, unsigned flags)
@@ -562,12 +579,15 @@ parser *jsnpg_parser_new_opt(parser_opts opts)
         }
 
         if(opts.bytes) {
-                parser_set_bytes(p, opts.bytes, opts.count);
+                p = parser_set_bytes(p, opts.bytes, opts.count, opts.writeable);
         } else if(opts.string) {
-                parser_set_bytes(p, (byte *)opts.string, strlen(opts.string));
+                p = parser_set_bytes(p, (byte *)opts.string, strlen(opts.string), false);
         } else if(opts.dom) {
-                parser_set_dom_info(p, dom_parser_info(opts.dom));
+                p = parser_set_dom_info(p, dom_parser_info(opts.dom));
         }
+
+        if(!p)
+                allocator_free(a);
 
         return p;
 }

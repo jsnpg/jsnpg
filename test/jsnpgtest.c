@@ -217,7 +217,7 @@ static jsnpg_result parse_solution(int soln, FILE *fh)
         fseek(fh, 0L, SEEK_END);
         size_t length = (size_t)ftell(fh);
         rewind(fh);
-        unsigned char *buf = malloc(length + 1);
+        unsigned char *buf = malloc(length + 8);
         if(!buf)
                 fail("Failed to allocate memory to read file content");
 
@@ -274,9 +274,9 @@ static jsnpg_result parse_solution(int soln, FILE *fh)
                 unsigned allow = flags[(soln - 11) / 2];
 
                 if(soln % 2) {
-                        res = jsnpg_parse(.allow = allow, .bytes = buf, .count = length, .generator = g);
+                        res = jsnpg_parse(.allow = allow, .bytes = buf, .count = length, .generator = g, .writeable = true);
                 } else {
-                        jsnpg_parser *p = jsnpg_parser_new(.allow = allow, .bytes = buf, .count = length);
+                        jsnpg_parser *p = jsnpg_parser_new(.allow = allow, .bytes = buf, .count = length, .writeable = true);
                         run_parse_next(p, g);
                         res = jsnpg_parse_result(p);
                         jsnpg_parser_free(p);

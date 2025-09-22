@@ -131,6 +131,7 @@ typedef struct {
         // created by jsnpg_generator_new(.dom = true, ...)
         unsigned char *bytes;           // input bytes, must set count
         size_t count;
+        bool writeable;                 // if true bytes is writeable and padded with 8 extra bytes
         char *string;                   // NULL terminated C string
         jsnpg_dom *dom;
 
@@ -190,6 +191,7 @@ typedef struct {
         unsigned allow;      
         unsigned char *bytes;
         size_t count;
+        bool writeable;
         char *string;
         jsnpg_dom *dom;
 

@@ -9,6 +9,7 @@ add_custom_target(test
          ./run_tests.sh ${CMAKE_CURRENT_BINARY_DIR}/jsnpgtest
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+set(CMAKE_C_COMPILER /usr/bin/gcc)
 add_executable(testutil testutil.c)
 
 target_link_libraries(testutil jsnpg_static)

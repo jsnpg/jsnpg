@@ -72,3 +72,56 @@ real	0m0.004s
 user	0m0.003s
 sys	0m0.001s
 =====================================================================
+
+Performance timings: Mon 22 Sep 18:46:51 BST 2025
+
+Note: new method of timing so we can tryout .writeable option
+      this is default, writeable off
+
+commit a1f6228de09b922fc7ecf0b05cc9d56f8b7271d6
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Sun Sep 21 23:03:14 2025 +0100
+
+    Used bytemap in space and string handling
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+Total time: 6.972004331s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+Total time: 1.565913030s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+Total time: 1.003118040s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+Total time: 0.002443680s
+=====================================================================
+
+Performance timings: Mon 22 Sep 18:51:54 BST 2025
+
+commit a1f6228de09b922fc7ecf0b05cc9d56f8b7271d6
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Sun Sep 21 23:03:14 2025 +0100
+
+    Used bytemap in space and string handling
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+Total time: 5.541359450s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+Total time: 1.523909060s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+Total time: 1.003170160s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+Total time: 0.002275250s
+=====================================================================

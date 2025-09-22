@@ -227,6 +227,7 @@ parse_result jsnpg_parse_opt(parse_opts opts)
                         .allow = opts.allow,
                         .bytes = opts.bytes,
                         .count = opts.count,
+                        .writeable = opts.writeable,
                         .dom = opts.dom
                         });
         if(!p)

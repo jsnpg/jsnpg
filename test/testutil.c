@@ -4,11 +4,56 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
+#define __USE_POSIX199309 
+#include <time.h>
 
 #include "../src/include/jsnpg.h"
 
+typedef struct timespec timespec;
+        
+static timespec time_sub(timespec end, timespec start)
+{
+    timespec temp;
+    if ((end.tv_nsec-start.tv_nsec)<0) {
+        temp.tv_sec = end.tv_sec-start.tv_sec-1;
+        temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+    } else {
+        temp.tv_sec = end.tv_sec-start.tv_sec;
+        temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+    }
+    return temp;
+}
+
+static timespec time_add(timespec t1, timespec t2)
+{
+        long nsec = t1.tv_nsec + t2.tv_nsec;
+        time_t sec = t1.tv_sec + t2.tv_sec;
+        if(nsec >= 1000000000) {
+                nsec -= 1000000000;
+                sec++;
+        }
+        return (timespec) { .tv_sec = sec, .tv_nsec = nsec };
+}
+
+static timespec time_base(int count)
+{
+        timespec start_time, end_time, temp;
+
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+        for(int i = 0 ; i < count ; i++) {
+                clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &temp);
+                clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &temp);
+        }
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+        return time_sub(end_time, start_time);
+}
+
+
 int main(int argc, char *argv[])
 {
+        timespec start_time, end_time;
+        timespec total_time = {};
+
         jsnpg_generator *g;
         jsnpg_result res = {};
         if(argc == 3) {
@@ -19,7 +64,7 @@ int main(int argc, char *argv[])
                         size_t len = strlen(json);
                         memcpy(buf, json, len + 1);
                         g = jsnpg_generator_new(.indent = 2);
-                        res = jsnpg_parse(.bytes = buf, .count = len, .generator = g);
+                        res = jsnpg_parse(.bytes = buf, .count = len, .generator = g, .writeable = true);
                         char *s = jsnpg_result_string(g);
                         printf("%s", s);
                         jsnpg_generator_free(g);
@@ -41,13 +86,18 @@ int main(int argc, char *argv[])
                                 fseek(fh, 0L, SEEK_END);
                                 size_t length = (size_t)ftell(fh);
                                 rewind(fh);
-                                uint8_t *buf = malloc(length + 1);
-                                if(buf) {
+                                uint8_t *buf = malloc(length + 8);
+                                uint8_t *tmp_buf = malloc(length + 8);
+                                if(buf && tmp_buf) {
                                         fread(buf, length, 1, fh);
                                         res = (jsnpg_result){};
+                                        timespec base_time = time_base(times);
+
                                         for(int i = 0 ; i < times ; i++) {
+                                                memcpy(tmp_buf, buf, length);
+                                                clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
                                                 g = jsnpg_generator_new(.max_nesting = 0);
-                                                res = jsnpg_parse(.bytes = buf, .count = length, .generator = g);
+                                                res = jsnpg_parse(.bytes = tmp_buf, .count = length, .generator = g, .writeable = true);
                                                 if(res.type == JSNPG_ERROR) {
                                                         printf("Parse failed: %d at %ld\n", res.error.code, res.position);
                                                         return 1;
@@ -56,10 +106,19 @@ int main(int argc, char *argv[])
                                                 //puts(s);
                                                 //printf("JSON length: %ld\n", strlen(s));
                                                 jsnpg_generator_free(g);
+                                                clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+
+                                                total_time = time_add(
+                                                                total_time, 
+                                                                time_sub(end_time, start_time));
+
                                         }
+                                        total_time = time_sub(total_time, base_time);
+
                                         free(buf);
                                         int ret = (res.type == JSNPG_EOF) ? 0 : 1;
                                         printf("Type: %d, Returned %d\n", res.type, ret);
+                                        printf("Total time: %ld.%09lds\n", total_time.tv_sec, total_time.tv_nsec);
                                         return ret;
                                 } else {
                                         perror("Failed to allocate buffer");
