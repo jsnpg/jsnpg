@@ -224,62 +224,6 @@ static unsigned parse_escape(parser *p)
         }
 }
 
-static inline byte mis_consume_whitespace(memory_input_stream *mis)
-{
-        byte c;
-
-        while(byte_map[(c = mis_peek(mis))] & BYTE_WHITESPACE)
-                 mis_take(mis);
-       
-        return c;
-
-}
-
-static byte consume_whitespace(parser *p, const bool allow_comments)
-{
-        memory_input_stream *const mis = p->mis;
-
-        byte c = mis_peek(mis);
-
-        if(!((byte_map[c] & BYTE_WHITESPACE) || (allow_comments && c == '/')))
-                return c;
-
-        if(!allow_comments) {
-                mis_take(mis); // c, whitespace
-
-                return mis_consume_whitespace(mis);
-        }
-
-        while(true) {
-                c = mis_consume_whitespace(mis);
-
-                if(c != '/')
-                        return c;
-
-                mis_take(mis); // '/'
-                c = mis_peek(mis);
-                if(c == '*') {
-                        mis_take(mis); // '*'
-                        while(true) {
-                                c = mis_find(mis, '*');
-                                if(c == '*') {
-                                        mis_take(mis); // '*'
-                                        if(mis_consume(mis, '/'))
-                                                break;
-                                }
-                                if(mis_eof(mis))
-                                        return '\0';
-                        }
-                } else if(c == '/') {
-                        c = mis_find(mis, '\n');
-                        if(mis_eof(mis))
-                                return '\0';
-                } else {        
-                        throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
-                }
-        }
-}
-
 static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validate_utf8)
 {
         memory_input_stream *const mis = p->mis;
@@ -789,7 +733,7 @@ static parser *parser_new(allocator *a, unsigned stack_size, unsigned flags)
         p->allocator = a;
         p->result = (parse_result) {};
 
-        p->mis = mis_new(a);
+        p->mis = mis_new(a, flags & JSNPG_ALLOW_COMMENTS);
         if(!p->mis)
                 return NULL;
 

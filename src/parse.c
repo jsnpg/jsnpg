@@ -41,7 +41,6 @@ static void parse_generate(parser *p, generator *g)
 {
         memory_input_stream *const mis = p->mis;
         const unsigned flags = p->flags;
-        const bool opt_comments = flags & JSNPG_ALLOW_COMMENTS;
         const bool opt_trailing_commas = flags & JSNPG_ALLOW_TRAILING_COMMAS;
  
         // Easier for us to think in terms of validating rather than allowing invalid
@@ -57,66 +56,55 @@ static void parse_generate(parser *p, generator *g)
         // STACK_ARRY   - in an array
         int stack_type = STACK_NONE;
 
-        byte b = consume_whitespace(p, opt_comments);
+        byte b;
 
         do {
-
+L_KEY:
                 if(stack_type == STACK_OBJECT) {
-                        if(b != '"')
+                        if(!mis_next(mis, '"'))
                                 throw_parse_error(p, JSNPG_ERROR_EXPECTED_KEY);
 
                         count = parse_string(p, &bytes, validate_utf8);
-                        b = consume_whitespace(p, opt_comments);
-                        if(b != ':')
+                        if(!mis_consume_next(mis, ':'))
                                 throw_parse_error(p, JSNPG_ERROR_EXPECTED_KEY);
 
                         if(!jsnpg_key(g, bytes, count)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
-                        
-                        mis_take(mis); // ':'
-                        b = consume_whitespace(p, opt_comments);
                 }
-
+L_VALUE:
+                b = mis_peek(mis);
                 switch(b) {
                 case '[':
                         stack_type = parse_start_array(p);
                         if(!jsnpg_start_array(g)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
-                        b = consume_whitespace(p, opt_comments);
-                        if(opt_trailing_commas && b == ',') {
-                                mis_take(mis); // ','
-                                b = consume_whitespace(p, opt_comments);
-                                if(b != ']')
+                        if(opt_trailing_commas && mis_consume_next(mis, ',')) {
+                                if(!mis_consume_next(mis, ']'))
                                         throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
                         }
-                        if(b ==  ']') {
+                        if(mis_next(mis, ']')) {
                                 stack_type = parse_end_array(p);
                                 if(!jsnpg_end_array(g))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                                 break;
                         }
-                        b = consume_whitespace(p, opt_comments);
-                        continue;
+                        goto L_VALUE;
 
                 case '{':
                         stack_type = parse_start_object(p);
                         if(!jsnpg_start_object(g)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
-                        b = consume_whitespace(p, opt_comments);
-                        if(opt_trailing_commas && b == ',') {
-                                mis_take(mis); // ','
-                                b = consume_whitespace(p, opt_comments);
-                                if(b != '}')
+                        if(opt_trailing_commas && mis_consume_next(mis, ',')) {
+                                if(!mis_consume_next(mis, '}'))
                                         throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
                         }
-                        if(b ==  '}') {
+                        if(mis_next(mis, '}')) {
                                 stack_type = parse_end_object(p);
                                 if(!jsnpg_end_object(g))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                                 break;
                         }
-                        b = consume_whitespace(p, opt_comments);
-                        continue;
+                        goto L_KEY;
 
                 case '"':
                         count = parse_string(p, &bytes, validate_utf8);
@@ -155,23 +143,26 @@ static void parse_generate(parser *p, generator *g)
                                 } 
                                 break;
                         }
-                        throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
+                        if(b == mis_consume_whitespace(mis))
+                                throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
+
+                        goto L_VALUE;
+
                 }
 
                 while(true) {
-                        b = consume_whitespace(p, opt_comments);
-                        if(b == ',') {
-                                mis_take(mis);
-                                b = consume_whitespace(p, opt_comments);
+                        if(mis_consume_next(mis, ',')) {
                                 // Optional comma only if followed by } or ]
-                                if(!(opt_trailing_commas && (b == '}' || b == ']')))
+                                if(!(opt_trailing_commas &&
+                                                (mis_next(mis, '}') 
+                                                 || mis_next(mis, ']'))))
                                         break;
                         }
-                        if(b == '}'&& stack_type == STACK_OBJECT) {
+                        if(mis_next(mis, '}') && stack_type == STACK_OBJECT) {
                                 stack_type = parse_end_object(p);
                                 if(!jsnpg_end_object(g))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
-                        } else if(b == ']' && stack_type == STACK_ARRAY) {
+                        } else if(mis_next(mis, ']') && stack_type == STACK_ARRAY) {
                                 stack_type = parse_end_array(p);
                                 if(!jsnpg_end_array(g))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
@@ -186,7 +177,7 @@ static void parse_generate(parser *p, generator *g)
 
         } while(more_todo);
 
-        consume_whitespace(p, opt_comments);
+        mis_consume_whitespace(mis);
 
 }
 

@@ -125,14 +125,13 @@ static inline json_type accept_eof(parser *p)
 static json_type parse_next(parser *p)
 {
         memory_input_stream *const mis = p->mis;
-        const bool opt_comments = p->flags & JSNPG_ALLOW_COMMENTS;
         const bool validate_utf8 = !(p->flags & JSNPG_ALLOW_INVALID_UTF8_IN);
         
         parse_state state = p->state;
         byte *bytes;
         size_t count;
         
-        byte b = consume_whitespace(p, opt_comments);
+        byte b;
 
         if(state == STATE_EOF)
                 throw_parse_error(p, JSNPG_ERROR_EOF);
@@ -142,12 +141,11 @@ static json_type parse_next(parser *p)
                 switch(state) {
 
                 case STATE_KEY_VALUE:
-                        if(b == '}') {
+                        if(mis_next(mis, '}')) {
                                 parse_end_object(p);
                                 return accept_end_object(p);
-                        } else if(b == ',') {
-                                mis_take(mis);
-                                b = consume_whitespace(p, opt_comments);
+                        } else if(!mis_consume_next(mis, ',')) {
+                                throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
                         }
 
                         if(!(p->flags & JSNPG_ALLOW_TRAILING_COMMAS)) {
@@ -159,7 +157,7 @@ static json_type parse_next(parser *p)
                         // fallthrough 
 
                 case STATE_OBJECT:
-                        if(b == '}') {
+                        if(mis_next(mis, '}')) {
                                 parse_end_object(p);
                                 return accept_end_object(p);
                         }
@@ -168,26 +166,21 @@ static json_type parse_next(parser *p)
                         // fallthrough
 
                 case STATE_OBJECT_COMMA:
-                        if(b != '"')
+                        if(!mis_next(mis, '"'))
                                 throw_parse_error(p, JSNPG_ERROR_EXPECTED_KEY);
 
                         count = parse_string(p, &bytes, validate_utf8);
 
-                        b = consume_whitespace(p, opt_comments);
-                        if(b != ':')
+                        if(!mis_consume_next(mis, ':'))
                                 throw_parse_error(p, JSNPG_ERROR_EXPECTED_KEY);
                         
-                        mis_take(mis); // ':'
                         return accept_key(p, bytes, count); 
 
                 case STATE_ARRAY_VALUE:
-                        if(b == ']') {
+                        if(mis_next(mis, ']')) {
                                 parse_end_array(p);
                                 return accept_end_array(p);
-                        } else if(b == ',') {
-                                mis_take(mis);
-                                b = consume_whitespace(p, opt_comments);
-                        } else {
+                        } else if(!mis_consume_next(mis, ',')) {
                                 throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
                         }
                         
@@ -201,14 +194,14 @@ static json_type parse_next(parser *p)
                         // fallthrough
 
                 case STATE_ARRAY:
-                        if(b == ']') {
+                        if(mis_next(mis, ']')) {
                                 parse_end_array(p);
                                 return accept_end_array(p);
                         }
                         break;
 
                 case STATE_DONE:
-                        consume_whitespace(p, opt_comments);
+                        mis_consume_whitespace(mis);
                         if(!mis_eof(mis)) {
                                 if(p->flags & JSNPG_ALLOW_MULTIPLE_VALUES) {
                                         state = STATE_START;
@@ -233,6 +226,7 @@ static json_type parse_next(parser *p)
                                 || state == STATE_ARRAY 
                                 || state == STATE_ARRAY_COMMA);
 
+                b = mis_peek(mis);
                 switch(b) {
                 case '"':
                         count = parse_string(p, &bytes, validate_utf8);
@@ -268,7 +262,9 @@ static json_type parse_next(parser *p)
                                         return accept_integer(p, l);
                                 }
                         }
-                        throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
+                        
+                        if(b == mis_consume_whitespace(mis))
+                                throw_parse_error(p, JSNPG_ERROR_UNEXPECTED);
                 }
         }
 

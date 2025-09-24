@@ -15,9 +15,10 @@ struct memory_input_stream {
         byte *write;
         byte *mark;
         size_t count;
+        bool allow_comments;
 };
 
-static memory_input_stream *mis_new(allocator *a)
+static memory_input_stream *mis_new(allocator *a, bool allow_comments)
 {
         memory_input_stream *mis = allocator_alloc(a, sizeof(memory_input_stream));
 
@@ -30,6 +31,7 @@ static memory_input_stream *mis_new(allocator *a)
         mis->read = NULL;
         mis->write = NULL;
         mis->mark = NULL;
+        mis->allow_comments = allow_comments;
 
         return mis;
 }
@@ -98,6 +100,75 @@ static inline bool mis_consume(memory_input_stream *mis, byte b)
         if(*mis->read != b)
                 return false;
 
+        mis->read++;
+        return true;
+}
+
+static inline byte mis_consume_whitespace_only(memory_input_stream *mis)
+{
+        byte c;
+
+        while(byte_map[(c = mis_peek(mis))] & BYTE_WHITESPACE)
+                 mis_take(mis);
+       
+        return c;
+
+}
+
+static byte mis_consume_whitespace(memory_input_stream *mis)
+{
+        byte c = mis_peek(mis);
+
+        if(!((byte_map[c] & BYTE_WHITESPACE) || (mis->allow_comments && c == '/')))
+                return c;
+
+        if(!mis->allow_comments) {
+                mis_take(mis); // c, whitespace
+
+                return mis_consume_whitespace_only(mis);
+        }
+
+        while(true) {
+                c = mis_consume_whitespace_only(mis);
+
+                if(c != '/')
+                        return c;
+
+                mis_take(mis); // '/'
+                c = mis_peek(mis);
+                if(c == '*') {
+                        mis_take(mis); // '*'
+                        while(true) {
+                                c = mis_find(mis, '*');
+                                if(c == '*') {
+                                        mis_take(mis); // '*'
+                                        if(mis_consume(mis, '/'))
+                                                break;
+                                }
+                                if(mis_eof(mis))
+                                        return '\0';
+                        }
+                } else if(c == '/') {
+                        c = mis_find(mis, '\n');
+                        if(mis_eof(mis))
+                                return '\0';
+                } else {        
+                        return '\0';
+                }
+        }
+}
+
+
+static inline bool mis_next(memory_input_stream *mis, byte b)
+{
+        return *mis->read == b 
+                || mis_consume_whitespace(mis) == b;
+}
+
+static inline bool mis_consume_next(memory_input_stream *mis, byte b)
+{
+        if(!mis_next(mis, b))
+                return false;
         mis->read++;
         return true;
 }
