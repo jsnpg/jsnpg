@@ -107,29 +107,15 @@ static inline bool mis_consume(memory_input_stream *mis, byte b)
 static inline byte mis_consume_whitespace_only(memory_input_stream *mis)
 {
         byte c;
-
         while(byte_map[(c = mis_peek(mis))] & BYTE_WHITESPACE)
                  mis_take(mis);
-       
         return c;
-
 }
 
-static byte mis_consume_whitespace(memory_input_stream *mis)
+static byte mis_consume_whitespace_comments(memory_input_stream *mis)
 {
-        byte c = mis_peek(mis);
-
-        if(!((byte_map[c] & BYTE_WHITESPACE) || (mis->allow_comments && c == '/')))
-                return c;
-
-        if(!mis->allow_comments) {
-                mis_take(mis); // c, whitespace
-
-                return mis_consume_whitespace_only(mis);
-        }
-
         while(true) {
-                c = mis_consume_whitespace_only(mis);
+                byte c = mis_consume_whitespace_only(mis);
 
                 if(c != '/')
                         return c;
@@ -156,6 +142,14 @@ static byte mis_consume_whitespace(memory_input_stream *mis)
                         return '\0';
                 }
         }
+}
+
+static inline byte mis_consume_whitespace(memory_input_stream *mis)
+{
+        if(mis->allow_comments)
+                return mis_consume_whitespace_comments(mis);
+        else
+                return mis_consume_whitespace_only(mis);
 }
 
 

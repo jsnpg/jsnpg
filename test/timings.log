@@ -149,3 +149,24 @@ Date:   Wed Sep 24 15:18:45 2025 +0100
 ./timer 1000 ./jsnpgtest json/input/pass01.json
 0.087958324s
 =====================================================================
+
+Performance timings: Wed 24 Sep 21:11:57 BST 2025
+
+commit e6e5cd013e95d7aca4069e5e629855d82fec3c89
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Wed Sep 24 21:11:30 2025 +0100
+
+    Rearranged consume_whitespace calls
+
+./timer 1000 ./jsnpgtest json/input/canada.json
+8.019187383s
+
+./timer 1000 ./jsnpgtest json/input/citm_catalog.json
+3.514004336s
+
+./timer 1000 ./jsnpgtest json/input/twitter.json
+2.184606989s
+
+./timer 1000 ./jsnpgtest json/input/pass01.json
+0.083830832s
+=====================================================================
