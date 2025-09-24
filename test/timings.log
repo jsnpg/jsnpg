@@ -125,3 +125,27 @@ Total time: 1.003170160s
 Type: 14, Returned 0
 Total time: 0.002275250s
 =====================================================================
+
+Performance timings: Wed 24 Sep 18:58:04 BST 2025
+
+Note: another change to timing
+      to try and get a more consistent timing metric
+
+commit 66fef3bc97996b66e6094c23fb2714b46056b2d8
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Wed Sep 24 15:18:45 2025 +0100
+
+    Tried simd on number parsing, got slower :(
+
+./timer 1000 ./jsnpgtest json/input/canada.json
+8.409259755s
+
+./timer 1000 ./jsnpgtest json/input/citm_catalog.json
+3.565821593s
+
+./timer 1000 ./jsnpgtest json/input/twitter.json
+2.158706850s
+
+./timer 1000 ./jsnpgtest json/input/pass01.json
+0.087958324s
+=====================================================================

@@ -7,6 +7,7 @@ project(jsnpg VERSION 1.0.0
 add_compile_options(
          -O2 
          -std=c23 
+         -ggdb
          -Wall 
          -Wextra 
  )

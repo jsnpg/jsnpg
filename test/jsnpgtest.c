@@ -223,10 +223,12 @@ static jsnpg_result parse_solution(int soln, FILE *fh)
 
         fread(buf, length, 1, fh);
 
-        if(soln <= 10) {
+        if(soln == 0) {
+                return (jsnpg_result){};
+        } else if(soln <= 10) {
                 if(soln % 2) {
                         if(create_dom) {
-                                res = jsnpg_parse(.bytes = buf, .count = length, .generator = g);
+                                res = jsnpg_parse(.bytes = buf, .count = length, .generator = g, .writeable = true);
                                 ctx_g = ctx_generator();
                                 if(res.type == JSNPG_EOF) {
                                         res = jsnpg_parse(
@@ -237,16 +239,17 @@ static jsnpg_result parse_solution(int soln, FILE *fh)
                                 ctx_g = ctx_generator();
                                 res = jsnpg_parse(.bytes = buf, .count = length,
                                                 .callbacks = &test_callbacks,
-                                                .ctx = ctx_g);
+                                                .ctx = ctx_g, .writeable = true);
                         } else {
                                 res = jsnpg_parse(.bytes = buf, 
                                                 .count = length, 
-                                                .generator = g);
+                                                .generator = g,
+                                                .writeable = true);
                         }
                 } else {
                         jsnpg_parser *p = NULL;
                         if(create_dom) {
-                                res = jsnpg_parse(.bytes = buf, .count = length, .generator = g);
+                                res = jsnpg_parse(.bytes = buf, .count = length, .generator = g, .writeable = true);
                                 if(res.type == JSNPG_EOF) {
                                         ctx_g = ctx_generator();
                                         p = jsnpg_parser_new(.dom = jsnpg_result_dom(g));
@@ -256,7 +259,7 @@ static jsnpg_result parse_solution(int soln, FILE *fh)
                                         fail("Failed to create DOM\n");
                                 }
                         } else {
-                                p = jsnpg_parser_new(.bytes = buf, .count = length);
+                                p = jsnpg_parser_new(.bytes = buf, .count = length, .writeable = true);
                                 run_parse_next(p, g);
                         }
                         res = jsnpg_parse_result(p);
@@ -300,6 +303,7 @@ static void usage(char *progname)
         printf("%s [-s <solution number>] <json filename>\n\n", progname);
         printf("Where solution number (default: 9) is:\n");
         printf("  N - parse/generate route [Stringified | Prettified : Parse | parse Next]\n"); 
+        printf("  0 - read file but do not parse, for benchmarking\n");
         printf("  1 - byte buffer => dom => stdout                [S:P]\n");
         printf("  2 - byte buffer => dom => stdout                [S:N]\n");
         printf("  3 - byte buffer => parse/callback => stdout     [S:P]\n");
@@ -324,7 +328,7 @@ static void usage(char *progname)
 }
                 
 int main(int argc, char *argv[]) {
-        int soln = 0;
+        int soln = -1;
 
         if(2 == argc) {
                 if(0 == strcmp("-h", argv[1])) {
@@ -335,11 +339,11 @@ int main(int argc, char *argv[]) {
                 }
         } else if(4 == argc && 0 == strcmp("-s", argv[1])) {
                 int l = (int)strtol(argv[2], NULL, 10);
-                if(l > 0 && l < 21)
+                if(l >= 0 && l < 21)
                         soln = l;
         }
 
-        if(!soln)
+        if(soln == -1)
                 fail("Usage: jsnpgtest [-s solution (1-20)] infile\n       jsnpgtest -h\n");
 
 
@@ -352,6 +356,9 @@ int main(int argc, char *argv[]) {
 
         jsnpg_result v = parse_solution(soln, fh);
         fclose(fh);
+
+        if(!soln) return 0;
+
         int ret = (v.type == JSNPG_EOF) ? 0 : 1;
         if(ret)
                 printf("Type: %d, Returned %d\n", v.type, ret);
