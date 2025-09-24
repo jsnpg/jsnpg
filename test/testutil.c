@@ -4,7 +4,11 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#ifndef __USE_POSIX199309
 #define __USE_POSIX199309 
+#endif
+
 #include <time.h>
 
 #include "../src/include/jsnpg.h"

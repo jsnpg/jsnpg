@@ -33,7 +33,12 @@ static memory_input_stream *mis_new(allocator *a)
 
         return mis;
 }
-
+//
+// static const byte *mis_current(memory_input_stream *mis)
+// {
+//         return mis->read;
+// }
+//
 static void mis_set_bytes(memory_input_stream *mis, byte *bytes, size_t count)
 {
         mis->start = bytes;

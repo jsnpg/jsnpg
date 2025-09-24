@@ -1,97 +1,12 @@
 #include <stdio.h>
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <limits.h>
 #include <immintrin.h>
 
 // What magic is this?
 // https://www.youtube.com/watch?v=wlvKAT7SZIQ
-
-typedef union {
-        uint64_t i;
-        unsigned char b[8];
-} map;
-
-map F0F0 = { .i = 0xF0F0F0F0F0F0F0F0 };
-map Z6Z6 = { .i = 0x0606060606060606 };
-map E333 = { .i = 0x3333333333333333 };
-
-
-
-void print_bytes(const char *msg, map m)
-{
-        printf("%s", msg);
-        for(int i = 0 ; i < 8 ;i++) {
-                printf(" %02X", m.b[i]);
-        }
-        printf("\n");
-}
-
-bool is_8_digits(const char *str)
-{
-        map m1;
-        memcpy(&m1.i, str, sizeof(uint64_t));
-        print_bytes("m1   : ", m1);
-        print_bytes("F0F0 : ", F0F0);
-        map m2 = { .i = m1.i & F0F0.i };
-        print_bytes("m2   : ", m2);
-        map m3 = { .i = m1.i + Z6Z6.i };
-        print_bytes("Z6Z6 : ", Z6Z6);
-        print_bytes("m3   : ", m3);
-        map m4 = { .i = m3.i & F0F0.i };
-        print_bytes("m4   : ", m4);
-        map m5 = { .i = m4.i >> 4 };
-        print_bytes("m5   : ", m5);
-        map m6 = { .i = m2.i | m5.i };
-        print_bytes("m6   : ", m6);
-
-        uint64_t v = m1.i;
-
-        return (((v & 0xF0F0F0F0F0F0F0F0) |
-                                (((v + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4))
-                                == 0x3333333333333333);
-}
-
-bool is_4_digits(const char *str)
-{
-        uint64_t v;
-        memcpy(&v, str, 8);
-        v = (v & 0xF0F0F0F0F0F0F0F0) |
-                                (((v + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4);
-
-        return 0x33333333 == (v & 0xFFFFFFFF);
-}
-
-bool is_2_digits(const char *str)
-{
-        uint64_t v;
-        memcpy(&v, str, 8);
-        v = (v & 0xF0F0F0F0F0F0F0F0) |
-                                (((v + 0x0606060606060606) & 0xF0F0F0F0F0F0F0F0) >> 4);
-
-        return 0x3333 == (v & 0xFFFF);
-}
-
-bool num_digits(const char *str)
-{
-        map m;
-        memcpy(&m.i, str, sizeof(m.i));
-        m.i -= 0x3030303030303030;
-        print_bytes("-0x30: ", m);
-        map m4 = { .i = m.i & 0x0F0F0F0F0F0F0F0F };
-        print_bytes("&0x0F: ", m4);
-        map m2 = { .i = m4.i + 0x060606060606 };
-        print_bytes("+0x06: ", m2);
-        map m3 = { .i = m2.i & 0x0F0F0F0F0F0F0F0F };
-        print_bytes("&0x0F: ", m3);
-        map m5 = { .i = m3.i - 0x060606060606 };
-        print_bytes("+0x06: ", m5);
-        map m6 = { .i = m5.i & 0x0F0F0F0F0F0F0F0F };
-        print_bytes("&0x0F: ", m6);
-}
-
-map ZFZF = { .i = 0x0F0F0F0F0F0F0F0F };
-map ZZFF = { .i = 0x00FF00FF00FF00FF };
-map ZZZZ = { .i = 0x0000FFFF0000FFFF };
 
 uint32_t parse_8_digits(const char *str)
 {
@@ -127,23 +42,54 @@ typedef union {
         u64x2 longs;
 } byte_long;
 
-int count_digits(const char *str, unsigned char max)
+int count_zeros(const char *str)
+{
+        int zeros = 0;
+        byte_long bl;
+        const char *src = str;
+        while(true) {
+                memcpy(&bl.bytes, src, 16);
+                bl.bytes = (bl.bytes != '0');
+                unsigned long l = bl.longs[0];
+                if(!l) {
+                        l = bl.longs[1];
+                        if(!l) {
+                                src += 16;
+                                zeros += 16;
+                                continue;
+                        }
+                        zeros += 8;
+                }
+
+                zeros += __builtin_ffsl(l) / 8;
+                return zeros;
+        }
+}
+
+int count_digits(const char *str)
 {
         int digits = 0;
         byte_long bl;
-        memcpy(&bl.bytes, str, 16);
-        bl.bytes -= 0x30;
-        bl.bytes = bl.bytes > max;
+        const char *src = str;
+        while(true) {
+                memcpy(&bl.bytes, src, 16);
+                bl.bytes -= 0x30;
+                bl.bytes = bl.bytes > 9;
 
-        unsigned long l = bl.longs[0];
-        if(!l) {
-                l = bl.longs[1];
-                if(!l)
-                        return 16 + count_digits(str + 16, max);
-                digits = 8;
+                unsigned long l = bl.longs[0];
+                if(!l) {
+                        l = bl.longs[1];
+                        if(!l) {
+                                src += 16;
+                                digits +=16;
+                                continue;
+                        }
+                        digits += 8;
+                }
+
+                digits += __builtin_ffsl(l) / 8;
+                return digits;
         }
-
-        return digits + __builtin_ffsl(l) / 8;
 }
 
 unsigned long parse_digits(const char *str)
@@ -153,7 +99,7 @@ unsigned long parse_digits(const char *str)
                 1e10, 1e11 };
 
         static int ls[2] = {0, 19};
-        int count = count_digits(str, (unsigned char)0x09);
+        int count = count_digits(str);
         ls[0] = count;
         int use = ls[count > 19];
         int exponent = count - use;
@@ -182,8 +128,123 @@ unsigned long parse_digits(const char *str)
         return tot;
 }
 
+unsigned long parse_digits2(const char *str, uint64_t tot, int use)
+{
+        static unsigned long pow10[] = {
+                1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 
+                1e10, 1e11 };
+
+        int used = 0;
+
+        if(tot) {
+                assert(use <= 11);
+                tot *= pow10[use];
+        }
+
+        while(use > 7) {
+                use -= 8;
+                tot += pow10[use] * parse_8_digits(str + used);
+                used += 8;
+        }
+        if(use > 3) {
+                use -= 4;
+                tot += pow10[use] * parse_4_digits(str + used);
+                used += 4;
+        }
+        if(use > 1) {
+                use -= 2;
+                tot += pow10[use] * parse_2_digits(str + used);
+                used += 2;
+        }
+        if(use > 0)
+                tot += str[used] - '0';
+
+        return tot;
+}
 
 
+
+static int parse_number(const unsigned char *src) //, double *real_result, long *integer_result)
+{
+        // We only take the most significant digits
+        // Max digits for long is 19
+        // double is 15-17 so we may lose some digits when converting
+        static const int max_sig_digits = 19;
+        static int sig_digits[2] = { 0, max_sig_digits };
+
+        int digits = 0;
+        int fdigits = 0;
+        int edigits = 0;
+        uint64_t exponent = 0;
+        int use_digits;
+        uint64_t sum = 0;
+
+        bool negative = *src == '-';
+        src += negative;
+        if(*src != '0') {
+                digits = count_digits(src);
+                if(digits == 0)
+                        return -1;
+                sig_digits[0] = digits;
+                use_digits = sig_digits[digits > max_sig_digits];
+                exponent = digits - use_digits;
+                sum = parse_digits2(src, 0, use_digits);
+                src += digits;
+                if(*src == '.') {
+                        src++;
+                        fdigits = count_digits(src);
+                        if(fdigits == 0)
+                                return -1;
+                        sig_digits[0] += fdigits;
+                        use_digits = sig_digits[(digits + fdigits) > max_sig_digits] - use_digits;
+                        exponent -= use_digits;
+                        sum = parse_digits2(src, sum, use_digits);
+                        src += fdigits;
+                }
+        } else {
+                src++;
+                if(*src == '.') {
+                        src++;
+                        int zeros = count_zeros(src);
+                        exponent = -zeros;
+                        src += zeros;
+                        fdigits = count_digits(src);
+                        if((zeros + fdigits) == 0)
+                                return -2;
+                        sig_digits[0] = fdigits;
+                        use_digits = sig_digits[fdigits > max_sig_digits];
+                        sum = parse_digits2(src, 0, use_digits);
+                        src += fdigits;
+                }
+        }
+        if(*src == 'e' || *src == 'E') {
+                src++;
+                bool exp_negative = (*src == '-');
+                src += exp_negative || (*src == '+');
+                edigits = count_digits(src);
+                if(edigits == 0)
+                        return -1;
+                sig_digits[0] = edigits;
+                use_digits = sig_digits[edigits > max_sig_digits];
+                uint64_t exp = parse_digits2(src, 0, use_digits);
+                if(exp > LONG_MAX)
+                        return -3;
+                src += edigits;
+                exponent += ((int64_t[]){exp, -exp})[exp_negative];
+        }
+        if((fdigits + edigits) || exponent || sum > (((uint64_t)LONG_MAX) + negative)) {
+                printf("Parse float: %s%luE%ld\n", 
+                                (negative ? "-" : ""),
+                                sum,
+                                exponent);
+                return 2;
+        } else {
+                printf("Parser int: %s%lu\n",
+                                (negative ? "-" : ""),
+                                sum);
+                return 1;
+        }
+}
 
 
 
@@ -191,18 +252,13 @@ unsigned long parse_digits(const char *str)
 
 int main(int argc, char **argv)
 {
-        int lzds = count_digits(argv[1], (unsigned char)0x00);
-        printf("Leading zeros : %d\n", lzds);
-        parse_digits(argv[1] + lzds);
+        int res = parse_number(argv[1]);
+        if(res < 0) {
+                printf("Parse error: %d\n", res);
+        }
 
-        return 0;
+        // int lzds = count_zeros(argv[1]);
+        // printf("Leading zeros : %d\n", lzds);
+        // parse_digits(argv[1] + lzds);
 
-        if(is_8_digits(argv[1]))
-                printf("%s = %u\n", argv[1], parse_8_digits(argv[1]));
-        else if(is_4_digits(argv[1]))
-                printf("%s = %u\n", argv[1], parse_4_digits(argv[1]));
-        else if(is_2_digits(argv[1]))
-                printf("%s = %u\n", argv[1], parse_2_digits(argv[1]));
-        else
-                printf("Not 2, 4 or 8 digits\n");
 }
