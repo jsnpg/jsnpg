@@ -217,7 +217,7 @@ static jsnpg_result parse_solution(int soln, FILE *fh)
         fseek(fh, 0L, SEEK_END);
         size_t length = (size_t)ftell(fh);
         rewind(fh);
-        unsigned char *buf = malloc(length + 8);
+        unsigned char *buf = malloc(length + 32);
         if(!buf)
                 fail("Failed to allocate memory to read file content");
 

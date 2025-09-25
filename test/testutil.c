@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
                                 fseek(fh, 0L, SEEK_END);
                                 size_t length = (size_t)ftell(fh);
                                 rewind(fh);
-                                uint8_t *buf = malloc(length + 8);
-                                uint8_t *tmp_buf = malloc(length + 8);
+                                uint8_t *buf = malloc(length + 32);
+                                uint8_t *tmp_buf = malloc(length + 32);
                                 if(buf && tmp_buf) {
                                         fread(buf, length, 1, fh);
                                         res = (jsnpg_result){};

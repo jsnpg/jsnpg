@@ -19,15 +19,15 @@ static void log_open(char *logfile)
         if(!log_stream)
                 log_stream = stderr;
 }
-
-static uint8_t log_printablechar(uint8_t c)
-{
-        if(0x20 <= c)
-                return c;
-        else
-                return '.';
-}
-
+//
+// static uint8_t log_printablechar(uint8_t c)
+// {
+//         if(0x20 <= c)
+//                 return c;
+//         else
+//                 return '.';
+// }
+//
 static void log_printf(char *fmt, ...)
 {
         if(!log_stream)

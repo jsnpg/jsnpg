@@ -29,46 +29,45 @@ static const char *error_msgs[] = {
         
 
 #ifdef JSNPG_DEBUG
-static void dump_p(parser *p)
-{
-        fprintf(stderr, "Parser Error:\n");
-        fprintf(stderr, "Error: %d\n", p->result.error.code);
-        fprintf(stderr, "At Position: %ld\n", p->result.error.at);
-        if(p->mis->count) {
-                fprintf(stderr, "Input Length: %ld\n", p->mis->count);
-                fprintf(stderr, "Input Processed: %ld\n", p->mis->count - p->mis->ptr);
-        } else {
-                fprintf(stderr, "Parsing DOM\n");
-        }
-        fprintf(stderr, "Stack Size: %d\n", p->stack.size);
-        fprintf(stderr, "Stack Pointer: %d\n", p->stack.ptr);
-        fprintf(stderr, "Stack: ");
-        for(int i = 0 ; i < p->stack.ptr ; i++) {
-                int offset = i >> 3;
-                int mask = 1 << (i & 0x07);
-                fprintf(stderr, "%c", 
-                                (mask & p->stack.stack[offset]) ? '[' : '{');
-        }
-        fprintf(stderr, "\n");
+// static void dump_p(parser *p)
+// {
+//         fprintf(stderr, "Parser Error:\n");
+//         fprintf(stderr, "Error: %d\n", p->result.error.code);
+//         fprintf(stderr, "At Position: %ld\n", p->result.position);
+//         if(p->mis->count) {
+//                 fprintf(stderr, "Input Length: %ld\n", p->mis->count);
+//                 fprintf(stderr, "Input Processed: %ld\n", p->mis->read - p->mis->start);
+//         } else {
+//                 fprintf(stderr, "Parsing DOM\n");
+//         }
+//         fprintf(stderr, "Stack Size: %d\n", p->stack.size);
+//         fprintf(stderr, "Stack Pointer: %d\n", p->stack.ptr);
+//         fprintf(stderr, "Stack: ");
+//         for(int i = 0 ; i < p->stack.ptr ; i++) {
+//                 int offset = i >> 3;
+//                 int mask = 1 << (i & 0x07);
+//                 fprintf(stderr, "%c", 
+//                                 (mask & p->stack.stack[offset]) ? '[' : '{');
+//         }
+//         fprintf(stderr, "\n");
+//
+// }
 
-}
-
-static void dump_g(generator *g)
-{
-        fprintf(stderr, "Generator Error:\n");
-        fprintf(stderr, "Error: %d\n", g->error.code);
-        fprintf(stderr, "At Token: %ld\n", g->error.at);
-        fprintf(stderr, "Stack Size: %d\n", g->stack.size);
-        fprintf(stderr, "Stack Pointer: %d\n", g->stack.ptr);
-        fprintf(stderr, "Stack: ");
-        for(int i = 0 ; i < g->stack.ptr ; i++) {
-                int offset = i >> 3;
-                int mask = 1 << (i & 0x07);
-                fprintf(stderr, "%c", 
-                                (mask & g->stack.stack[offset]) ? '[' : '{');
-        }
-        fprintf(stderr, "\n");
-}
+// static void dump_g(generator *g)
+// {
+//         fprintf(stderr, "Generator Error:\n");
+//         fprintf(stderr, "Error: %d\n", g->error.code);
+//         fprintf(stderr, "Stack Size: %d\n", g->stack.size);
+//         fprintf(stderr, "Stack Pointer: %d\n", g->stack.ptr);
+//         fprintf(stderr, "Stack: ");
+//         for(int i = 0 ; i < g->stack.ptr ; i++) {
+//                 int offset = i >> 3;
+//                 int mask = 1 << (i & 0x07);
+//                 fprintf(stderr, "%c", 
+//                                 (mask & g->stack.stack[offset]) ? '[' : '{');
+//         }
+//         fprintf(stderr, "\n");
+// }
 #endif
 
 static const char *error_text(error_code code)

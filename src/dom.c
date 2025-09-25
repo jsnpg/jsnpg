@@ -21,10 +21,10 @@ typedef struct dom_node dom_node;
 struct dom_node {
         union {
                 json_type type;
-                size_t count;
                 double real;
                 long integer;
-                byte bytes[];
+                size_t count;
+                byte *bytes;
         } is;
 };
 
@@ -69,9 +69,9 @@ static dom *dom_hdr_new(allocator *a, size_t size)
         return hdr;
 }
 
-static dom_node *dom_node_next(dom *root, size_t count)
+static dom_node *dom_node_next(dom *root, int nodes)
 {
-        size_t required = dom_size_align(count + 2 * NODE_SIZE);
+        size_t required = dom_size_align(NODE_SIZE * nodes);
         dom *hdr = root->current;
         if(required > hdr->size - hdr->count) {
                 dom *new = dom_hdr_new(root->allocator, required);
@@ -88,21 +88,19 @@ static dom_node *dom_node_next(dom *root, size_t count)
         return (dom_node *)(offset + (char *)hdr);
 }
 
-static dom_node *dom_add_type(dom *root, json_type type, size_t count)
+static dom_node *dom_add_type(dom *root, json_type type, int extra)
 {
-        dom_node *node = dom_node_next(root, count);
+        dom_node *node = dom_node_next(root, 1 + extra);
         if(!node)
                 return NULL;
         node->is.type = type;
-        node++;
-        node->is.count = count;
 
         return node;
 }
 
 static inline dom_node *dom_add_integer(dom *root, long integer)
 {
-        dom_node *node = dom_add_type(root, JSNPG_INTEGER, NODE_SIZE);
+        dom_node *node = dom_add_type(root, JSNPG_INTEGER, 1);
         if(!node)
                 return NULL;
 
@@ -114,7 +112,7 @@ static inline dom_node *dom_add_integer(dom *root, long integer)
 
 static inline dom_node *dom_add_real(dom *root, double real)
 {
-        dom_node *node = dom_add_type(root, JSNPG_REAL, NODE_SIZE);
+        dom_node *node = dom_add_type(root, JSNPG_REAL, 1);
         if(!node)
                 return NULL;
 
@@ -126,12 +124,14 @@ static inline dom_node *dom_add_real(dom *root, double real)
 
 static inline dom_node *dom_add_bytes(dom *root, json_type type, const byte *bytes, size_t count)
 {
-        dom_node *node = dom_add_type(root, type, count);
+        dom_node *node = dom_add_type(root, type, 2);
         if(!node)
                 return NULL;
 
         node++;
-        memcpy(node->is.bytes, bytes, count);
+        node->is.count = count;
+        node++;
+        node->is.bytes = (byte *)bytes;
 
         return node;
 }
@@ -252,9 +252,6 @@ static json_type dom_parse_next(parser *p)
         dom_node *node = (dom_node *)(offset + (char *)hdr);
         offset += NODE_SIZE;
         json_type type = node->is.type;
-        node++;
-        offset += NODE_SIZE;
-        size_t count = node->is.count;
         switch(type) {
         case JSNPG_INTEGER:
                 node++;
@@ -269,9 +266,11 @@ static json_type dom_parse_next(parser *p)
         case JSNPG_STRING:
         case JSNPG_KEY:
                 node++;
-                offset += dom_size_align(count);
+                offset += NODE_SIZE;
+                p->result.string.count = node->is.count;
+                node++;
+                offset += NODE_SIZE;
                 p->result.string.bytes = node->is.bytes;
-                p->result.string.count = count;
                 break;
         default:
         }
@@ -284,6 +283,7 @@ static json_type dom_parse_next(parser *p)
 
 static parse_result dom_parse(parser *p, generator *g)
 {
+        size_t count;
         dom *hdr = p->dom_info.hdr;
         size_t offset = sizeof(dom);
         bool ok = true;
@@ -292,20 +292,23 @@ static parse_result dom_parse(parser *p, generator *g)
                 dom_node *node = (dom_node *)(offset + (char *)hdr);
                 offset += NODE_SIZE;
                 json_type type = node->is.type;
-                node++;
-                offset += NODE_SIZE;
-                size_t count = node->is.count;
 
                 switch(type) {
                 case JSNPG_STRING:
                         node++;
-                        offset += dom_size_align(count);
+                        offset += NODE_SIZE;
+                        count = node->is.count;
+                        node++;
+                        offset += NODE_SIZE;
                         ok = jsnpg_string(g, node->is.bytes, count);
                         break;
 
                 case JSNPG_KEY:
                         node++;
-                        offset += dom_size_align(count);
+                        offset += NODE_SIZE;
+                        count = node->is.count;
+                        node++;
+                        offset += NODE_SIZE;
                         ok = jsnpg_key(g, node->is.bytes, count);
                         break;
 

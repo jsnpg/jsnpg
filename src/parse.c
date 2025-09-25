@@ -211,33 +211,70 @@ static parse_result parse(parser *p, generator *g)
 parse_result jsnpg_parse_opt(parse_opts opts)
 {
         generator *g;
+        generator *new_g = NULL;
         parser *p;
-        
-        p = jsnpg_parser_new_opt((parser_opts) {
-                        .max_nesting = opts.max_nesting,
-                        .allow = opts.allow,
-                        .bytes = opts.bytes,
-                        .count = opts.count,
-                        .writeable = opts.writeable,
-                        .dom = opts.dom
-                        });
-        if(!p)
-                return make_error_return(JSNPG_ERROR_ALLOC, 0);
-        else if(p->result.type == JSNPG_ERROR)
-                return p->result;
+        byte *bytes = opts.bytes;
+        char *string = opts.string;
+        size_t count = opts.count;
 
         if(1 != (opts.callbacks != NULL) + (opts.generator != NULL)) {
                 return make_error_return(JSNPG_ERROR_OPT, 0);
         }
-
+        
         if(opts.callbacks) {
-                g = generator_new(0, p->flags);
+                g = generator_new(0, opts.allow);
+                new_g = g;
                 if(!g) {
                         return make_error_return(JSNPG_ERROR_ALLOC, 0);
                 }
                 generator_set_callbacks(g, opts.callbacks, opts.ctx);
         } else {
-                g = generator_reset(opts.generator, p->flags);
+                g = generator_reset(opts.generator, opts.allow);
+        }
+
+        if(!opts.writeable) {
+                if(string) {
+                        count = strlen(string);
+                        string = (char *)copy_bytes(
+                                        g->allocator, 
+                                        (byte *)string, 
+                                        1 + count);
+                        if(!string) {
+                                jsnpg_generator_free(new_g);
+                                return make_error_return(JSNPG_ERROR_ALLOC, 0);
+                        }
+                }
+                if(bytes) {
+                        count = opts.count;
+                        bytes = copy_bytes(
+                                        g->allocator,
+                                        bytes,
+                                        count);
+                        if(!bytes) {
+                                jsnpg_generator_free(new_g);
+                                return make_error_return(JSNPG_ERROR_ALLOC, 0);
+                        }
+                }
+        } 
+
+
+        
+        p = jsnpg_parser_new_opt((parser_opts) {
+                        .max_nesting = opts.max_nesting,
+                        .allow = opts.allow,
+                        .bytes = bytes,
+                        .count = count,
+                        .string = string,
+                        .writeable = true,
+                        .dom = opts.dom
+                        });
+
+        if(!p) {
+                jsnpg_generator_free(new_g);
+                return make_error_return(JSNPG_ERROR_ALLOC, 0);
+        } else if(p->result.type == JSNPG_ERROR) {
+                jsnpg_generator_free(new_g);
+                return p->result;
         }
         
         parse_result result;
@@ -247,8 +284,7 @@ parse_result jsnpg_parse_opt(parse_opts opts)
                 result = parse(p, g);
 
         jsnpg_parser_free(p);
-        if(opts.callbacks)
-                jsnpg_generator_free(g);
+        jsnpg_generator_free(new_g);
 
         return result;
 }

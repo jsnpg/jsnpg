@@ -13,6 +13,8 @@
 #include <string.h>
 #include <stdarg.h>
 
+#define WRITEABLE_BYTES_PADDING 32
+
 static inline bool parser_in_object(parser *p)
 {
         return stack_peek(&p->stack) == STACK_OBJECT;
@@ -689,6 +691,14 @@ static json_type parse_number(parser *p, double *real_result, long *integer_resu
 }
 #pragma GCC diagnostic pop
 
+static byte *copy_bytes(allocator *a, byte *bytes, size_t count)
+{
+        byte *b = allocator_alloc(a, count + WRITEABLE_BYTES_PADDING);
+        if(b)
+                memcpy(b, bytes, count);
+        return b;
+}
+
 static parser *parser_set_bytes(parser *p, byte *bytes, size_t count, bool writeable)
 {
         // Skip leading byte order mark
@@ -702,13 +712,12 @@ static parser *parser_set_bytes(parser *p, byte *bytes, size_t count, bool write
         if(writeable) {
                 b = bytes;
         } else {
-                b = allocator_alloc(p->allocator, count + 8);
+                b = copy_bytes(p->allocator, bytes, count);
                 if(!b)
                         return NULL;
-                memcpy(b, bytes, count);
         }
 
-        memset(b + count, '\0', 8); 
+        memset(b + count, '\0', WRITEABLE_BYTES_PADDING); 
 
         mis_set_bytes(p->mis, b, count);
 
