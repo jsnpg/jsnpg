@@ -191,3 +191,28 @@ Date:   Wed Sep 24 23:40:42 2025 +0100
 ./timer 1000 ./jsnpgtest json/input/pass01.json
 0.081440429s
 =====================================================================
+
+Performance timings: Thu 25 Sep 15:57:53 BST 2025
+
+commit 7e67920f6a6c2ce61d5a8d431d502a27d31e1435
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Thu Sep 25 15:57:37 2025 +0100
+
+    Modified dom storage. Changed timing method back to previous
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+Total time: 5.004208636s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+Total time: 1.397443343s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+Total time: 0.995642566s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+Total time: 0.002270602s
+=====================================================================

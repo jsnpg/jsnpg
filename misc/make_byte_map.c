@@ -1,37 +1,24 @@
 #include <stdio.h>
 
 #define BYTE_WHITESPACE         (1 << 0)
-#define BYTE_QUOTE              (1 << 1)
-#define BYTE_ASCII_STRING       (1 << 2)
-#define BYTE_COMMENT            (1 << 3)
-#define BYTE_0_9                (1 << 4)
-#define BYTE_1_9                (1 << 5)
-#define BYTE_HEX_DIGIT          (1 << 6)
-#define BYTE_EXPONENT           (1 << 7)
-#define BYTE_EXPONENT_SIGN      (1 << 8)
-#define BYTE_ESCAPE             (1 << 9)
-#define BYTE_LEADER_2           (1 << 10)
-#define BYTE_LEADER_3           (1 << 11)
-#define BYTE_E0                 (1 << 12)
-#define BYTE_ED                 (1 << 13)
-#define BYTE_LEADER_4           (1 << 14)
-#define BYTE_F0                 (1 << 15)
-#define BYTE_F4                 (1 << 16)
-#define BYTE_CONTINUATION       (1 << 17)
-#define BYTE_E0_NEXT            (1 << 18)
-#define BYTE_ED_NEXT            (1 << 19)
-#define BYTE_F0_NEXT            (1 << 20)
-#define BYTE_F4_NEXT            (1 << 21)
-#define BYTE_POINT              (1 << 22)
-#define BYTE_OPEN_BRACE         (1 << 23)
-#define BYTE_CLOSE_BRACE        (1 << 24)
-#define BYTE_OPEN_BRACKET       (1 << 25)
-#define BYTE_CLOSE_BRACKET      (1 << 26)
-#define BYTE_COMMA              (1 << 27)
-#define BYTE_COLON              (1 << 28)
-#define BYTE_MINUS              (1 << 29)
-#define BYTE_BACKSLASH          (1 << 30)
-#define BYTE_0                  (1 << 31)
+#define BYTE_LINE_TERMINATOR    (1 << 1)
+#define BYTE_QUOTE              (1 << 2)
+#define BYTE_ASCII_STRING       (1 << 3)
+#define BYTE_COMMENT            (1 << 4)
+#define BYTE_0_9                (1 << 5)
+#define BYTE_1_9                (1 << 6)
+#define BYTE_HEX_DIGIT          (1 << 7)
+#define BYTE_EXPONENT           (1 << 8)
+#define BYTE_EXPONENT_SIGN      (1 << 9)
+#define BYTE_ESCAPE             (1 << 10)
+#define BYTE_LEADER_2           (1 << 11)
+#define BYTE_LEADER_3           (1 << 12)
+#define BYTE_LEADER_4           (1 << 13)
+#define BYTE_CONTINUATION       (1 << 14)
+#define BYTE_E0_NEXT            (1 << 15)
+#define BYTE_ED_NEXT            (1 << 16)
+#define BYTE_F0_NEXT            (1 << 17)
+#define BYTE_F4_NEXT            (1 << 18)
 
 int main()
 {
@@ -39,8 +26,10 @@ int main()
         printf("static const unsigned byte_map[] = {");
         for(int i = 0 ; i < 256 ; i++) {
                 unsigned mask;
-                if(i == '\t' || i == '\n' || i == '\r')
+                if(i == '\t')
                         mask = BYTE_WHITESPACE;
+                else if(i == '\n' || i == '\r')
+                        mask = BYTE_WHITESPACE | BYTE_LINE_TERMINATOR;
                 else if(i < ' ')
                         mask = 0;
                 else if(i == ' ')
@@ -48,25 +37,25 @@ int main()
                 else if(i < '"')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '"')
-                        mask = BYTE_QUOTE | BYTE_ESCAPE;
+                        mask = BYTE_QUOTE;
                 else if(i < '+')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '+')
-                        mask = BYTE_ASCII_STRING | BYTE_EXPONENT_SIGN;
+                        mask = BYTE_ASCII_STRING;
                 else if(i == ',')
-                        mask = BYTE_ASCII_STRING | BYTE_COMMA;
+                        mask = BYTE_ASCII_STRING;
                 else if(i == '-')
-                        mask = BYTE_ASCII_STRING | BYTE_MINUS | BYTE_EXPONENT_SIGN;
+                        mask = BYTE_ASCII_STRING;
                 else if(i == '.')
-                        mask = BYTE_ASCII_STRING | BYTE_POINT;
+                        mask = BYTE_ASCII_STRING;
                 else if(i == '/')
-                        mask = BYTE_ASCII_STRING | BYTE_COMMENT | BYTE_ESCAPE;
+                        mask = BYTE_ASCII_STRING | BYTE_COMMENT;
                 else if(i == '0')
-                        mask = BYTE_ASCII_STRING | BYTE_0 | BYTE_0_9 | BYTE_HEX_DIGIT;
+                        mask = BYTE_ASCII_STRING | BYTE_0_9 | BYTE_HEX_DIGIT;
                 else if(i <= '9')
                         mask = BYTE_ASCII_STRING | BYTE_0_9 | BYTE_1_9| BYTE_HEX_DIGIT;
                 else if(i == ':')
-                        mask = BYTE_ASCII_STRING | BYTE_COLON;
+                        mask = BYTE_ASCII_STRING;
                 else if(i < 'A')
                         mask = BYTE_ASCII_STRING;
                 else if(i <= 'F')
@@ -74,11 +63,11 @@ int main()
                 else if(i < '[')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '[')
-                        mask = BYTE_ASCII_STRING | BYTE_OPEN_BRACKET;
+                        mask = BYTE_ASCII_STRING;
                 else if(i == '\\')
-                        mask = BYTE_BACKSLASH | BYTE_ESCAPE;
+                        mask = BYTE_ESCAPE;
                 else if(i == ']')
-                        mask = BYTE_ASCII_STRING | BYTE_CLOSE_BRACKET;
+                        mask = BYTE_ASCII_STRING;
                 else if(i < 'a')
                         mask = BYTE_ASCII_STRING;
                 else if(i < 'g')
@@ -86,35 +75,21 @@ int main()
                 else if(i < '{')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '{')
-                        mask = BYTE_ASCII_STRING | BYTE_OPEN_BRACE;
+                        mask = BYTE_ASCII_STRING;
                 else if(i == '|')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '}')
-                        mask = BYTE_ASCII_STRING | BYTE_CLOSE_BRACE;
+                        mask = BYTE_ASCII_STRING;
                 else if(i < 0x80)
                         mask = BYTE_ASCII_STRING;
-                else if(i <= 0x8F)
-                        mask = BYTE_CONTINUATION | BYTE_ED_NEXT | BYTE_F4_NEXT;
-                else if(i <= 0x9F)
-                        mask = BYTE_CONTINUATION | BYTE_ED_NEXT | BYTE_F0_NEXT;
                 else if(i <= 0xBF)
-                        mask = BYTE_CONTINUATION | BYTE_E0_NEXT | BYTE_F0_NEXT;
+                        mask = BYTE_CONTINUATION;
                 else if(i >= 0xC2 && i <= 0xDF)
                         mask = BYTE_LEADER_2;
-                else if(i == 0xE0)
-                        mask = BYTE_LEADER_3 | BYTE_E0;
-                else if(i <= 0xEC)
-                        mask = BYTE_LEADER_3;
-                else if(i == 0xED)
-                        mask = BYTE_LEADER_3 | BYTE_ED;
                 else if(i <= 0xEF)
                         mask = BYTE_LEADER_3;
-                else if(i == 0xF0)
-                        mask = BYTE_LEADER_4 | BYTE_F0;
-                else if(i < 0xF4)
+                else if(i <= 0xF4)
                         mask = BYTE_LEADER_4;
-                else if(i == 0xF4)
-                        mask = BYTE_LEADER_4 | BYTE_F4;
                 else
                         mask = 0;
 
