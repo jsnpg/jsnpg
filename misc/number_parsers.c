@@ -2,12 +2,15 @@
 #include <stdio.h>
 
 #include "digits.c"
+#include "util_timer.c"
 
+#define USAGE "number_parsers count filename"
 #define FIRST_INT_DIGIT "First character must be a digit"
 #define FIRST_FRAC_DIGIT "First fractional character must be a digit"
 #define FIRST_EXP_DIGIT "First exponent character must be a digit"
 
-static void *log_error(byte *msg)
+[[noreturn]]
+static void *log_error(char *msg)
 {
         fprintf(stderr, msg);
         exit(1);
@@ -105,6 +108,7 @@ static const byte *parse_number_1(const byte *str, long *integer_result, int *ex
                 exponent += ((int[]){exp, -exp})[exp_negative];
         }
 
+        (void)force_double;
         *exponent_result = exponent;
         *integer_result = ((int64_t[]){sum, -sum})[negative];
         return src;
@@ -215,6 +219,7 @@ static const byte *parse_number_2(const byte *str, long *integer_result, int *ex
                 exponent += ((int[]){exp, -exp})[exp_negative];
         }
 
+        (void)edigits;
         *exponent_result = exponent;
         *integer_result = ((int64_t[]){sum, -sum})[negative];
         return src;
@@ -240,7 +245,7 @@ static const byte *parse_number_3(const byte *str, long *integer_result, int *ex
         static const byte upper_e = ((byte)'E') - '0';
 
 
-        const char *src = str;
+        const byte *src = str;
 
         bool force_double = false;
         bool negative = false;
@@ -326,25 +331,166 @@ static const byte *parse_number_3(const byte *str, long *integer_result, int *ex
                 exponent += exp_sign * exp;
         }
 
+        (void)force_double;
         *exponent_result = exponent;
         *integer_result = negative ? -sum : sum;
 
         return src;
 }
 
+static const byte *parse_number_4(const byte *str, long *integer_result, int *exponent_result)
+{
+        byte d;
+        unsigned dcount = 0;
+        unsigned long sum;
+        bool negative;
+        bool exp_negative;
+        int exponent = 0;
+        unsigned exp = 0;
+
+        const byte *src = str;
+
+        negative = *src == '-';
+        src += negative;
+        d = *src - '0';
+
+        if(d > 9) return NULL;
+
+        sum = d;
+        src++;
+        if(sum) {
+                for(dcount = 1 ; dcount < 19 ; dcount++, src++) {
+                        d = *src - '0';
+                        if(d > 9) goto L_DP;
+                        sum = sum * 10 + d;
+                }
+                while(true) {
+                        d = *src - '0';
+                        if(d > 9) goto L_DP;
+                        exponent++;
+                        src++;
+                }
+        }
+        
+L_DP:
+        if(*src == '.') {
+                src++;
+                d = *src - '0';
+                if(d > 9) return NULL;
+
+                if(sum == 0 && d == 0) {
+                        do {
+                                src++;
+                                exponent--;
+                                d = *src - '0';
+                        } while(d == 0);
+
+                        if(d > 9) goto L_EXP;
+                }
+
+                sum = sum * 10 + d;
+                exponent--;
+                src++;
+                for( ; dcount < 19 ; dcount++, src++) {
+                        d = *src - '0';
+                        if(d > 9) goto L_EXP;
+                        sum = sum * 10 + d;
+                        exponent--;
+                }
+                while((*src - '0') < 10) {
+                        src++;
+                }
+        }
+
+L_EXP:
+        if(*src == 'e' || *src == 'E') {
+                src++;
+                exp_negative = *src == '-';
+                src += exp_negative || *src == '+';
+                d = *src - '0';
+                if(d > 9) return NULL;
+
+                exp = d;
+                for(int i = 0 ; i < 10 ; i++) {
+                        src++;
+                        d = *src - '0';
+                        if(d > 9) goto L_DONE;
+                        exp = exp * 10 + d;
+                }
+                if(!exp_negative) return NULL;
+        }
+
+L_DONE:
+        if(exp_negative && exp > 0)
+                exponent -= exp;
+        else
+                exponent += exp;
+
+        *integer_result = sum;
+        *exponent_result = exponent;
+
+        return src;
+}
+
+
+static inline const byte *skip_whitespace(const byte *bytes)
+{
+        byte c;
+        while((c = *bytes) == ' ' || c == '\n' || c == '\r')
+                bytes++;
+        return bytes;
+}
+
+typedef const byte *(*number_parser)(const byte *, long *, int *);
+
+static void run_n(unsigned times, 
+                char * comment, 
+                number_parser fn,
+                const byte *bytes)
+{
+        long sum = 0;
+        int exp = 0;
+        const byte *b;
+
+        timespec start = time_now();
+
+        for(unsigned i = 0 ; i < times ; i++) {
+                b = bytes;
+                while(*b) {
+                        b = fn(b, &sum, &exp);
+                        b = skip_whitespace(b);
+                }
+        }
+
+        timespec duration = time_sub(time_now(), start);
+
+        printf("%s: %ld.%09ld\n", comment, duration.tv_sec, duration.tv_nsec);
+}
+
+
 int main(int argc, char **argv)
 {
-        const byte *bytes = (byte *)"234.45645e78                         ";
-        long integer;
-        int exponent;
-        const char *res;
+        if(argc != 3) return log_error(USAGE),0;
 
-        res = parse_number_1(bytes, &integer, &exponent);
-        printf("1: %ld %d\n", integer, exponent);
+        int times = strtol(argv[1], NULL, 10);
+        if(times < 1) return log_error(USAGE),0;
 
-        res = parse_number_2(bytes, &integer, &exponent);
-        printf("2: %ld %d\n", integer, exponent);
+        const byte *bytes = read_file(argv[2]);
 
-        res = parse_number_3(bytes, &integer, &exponent);
-        printf("3: %ld %d\n", integer, exponent);
+        run_n(times, "Parse 1", parse_number_1, bytes);
+        run_n(times, "Parse 2", parse_number_2, bytes);
+        run_n(times, "Parse 3", parse_number_3, bytes);
+        run_n(times, "Parse 4", parse_number_4, bytes);
+        //
+        // res = parse_number_1(bytes, &integer, &exponent);
+        // printf("1: %ld %d\n", integer, exponent);
+        //
+        // res = parse_number_2(bytes, &integer, &exponent);
+        // printf("2: %ld %d\n", integer, exponent);
+        //
+        // res = parse_number_3(bytes, &integer, &exponent);
+        // printf("3: %ld %d\n", integer, exponent);
+        //
+
+
 }

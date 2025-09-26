@@ -1,0 +1,16 @@
+data/0_13_4_digits.txt
+data/0_13_digits.txt
+data/0_18_digits.txt
+data/0_4_5_digits.txt
+data/0_6_digits.txt
+data/0_8_6_digits.txt
+data/12_3_digits.txt
+data/15_digits.txt
+data/1_6_digits.txt
+data/19_digits.txt
+data/2_11_digits.txt
+data/2_17_digits.txt
+data/2_3_digits.txt
+data/2_7_digits.txt
+data/3_digits.txt
+data/9_digits.txt
