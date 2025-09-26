@@ -82,8 +82,12 @@ int main()
                         mask = BYTE_ASCII_STRING;
                 else if(i < 0x80)
                         mask = BYTE_ASCII_STRING;
+                else if(i <= 0x8F)
+                        mask = BYTE_CONTINUATION | BYTE_ED_NEXT | BYTE_F4_NEXT;
+                else if(i <= 0x9F)
+                        mask = BYTE_CONTINUATION | BYTE_ED_NEXT | BYTE_F0_NEXT;
                 else if(i <= 0xBF)
-                        mask = BYTE_CONTINUATION;
+                        mask = BYTE_CONTINUATION | BYTE_E0_NEXT | BYTE_F0_NEXT;
                 else if(i >= 0xC2 && i <= 0xDF)
                         mask = BYTE_LEADER_2;
                 else if(i <= 0xEF)

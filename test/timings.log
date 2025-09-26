@@ -216,3 +216,28 @@ Total time: 0.995642566s
 Type: 14, Returned 0
 Total time: 0.002270602s
 =====================================================================
+
+Performance timings: Fri 26 Sep 20:18:41 BST 2025
+
+commit 240727c849c5c57b8b48379f7481f27b61934652
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Fri Sep 26 20:18:19 2025 +0100
+
+    Number parsing performance testing/improvement
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+Total time: 4.983706964s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+Total time: 1.375184827s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+Total time: 0.933779642s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+Total time: 0.002013872s
+=====================================================================

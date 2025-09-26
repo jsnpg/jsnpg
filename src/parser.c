@@ -741,7 +741,6 @@ L_DP:
                 if(d > 9) 
                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
 
-
                 if(sum == 0 && d == 0) {
                         do {
                                 src++;
@@ -752,18 +751,23 @@ L_DP:
                         if(d > 9) goto L_EXP;
                 }
 
-                sum = sum * 10 + d;
-                exponent--;
                 src++;
+
+                // dcount will now be out by 1 but it doesn't matter as
+                // we will still collect the right number of digits
+                // and we already know we are floating point
+
                 for( ; dcount < 19 ; dcount++, src++) {
-                        d = *src - '0';
-                        if(d > 9) goto L_EXP;
                         sum = sum * 10 + d;
                         exponent--;
+                        d = *src - '0';
+                        if(d > 9) goto L_EXP;
                 }
-                while((*src - '0') < 10) {
+                d = *src - '0';
+                while(d < 10) {
                         dcount++;
                         src++;
+                        d = *src - '0';
                 }
         }
 
@@ -800,16 +804,18 @@ L_DONE:
                 if (exponent >= FASTFLOAT_SMALLEST_POWER &&
                                 exponent <= FASTFLOAT_LARGEST_POWER) {
                         *real_result = compute_float_64(exponent, sum, negative, &success);
-                } else if(exponent < FASTFLOAT_SMALLEST_POWER) {
-                        *real_result = negative ? -0.0 : 0.0;
-                        success = true;
                 }
                 if(!success) {
                         const char *start = (const char *)mis_at(mis, start_pos);
                         char *end = parse_float_strtod(start, real_result);
-                        if(!end)
-                                throw_parse_error(p, JSNPG_ERROR_NUMBER);
-                        mis_adjust(mis, (byte *)end);
+                        if(!end) {
+                                if(exponent < FASTFLOAT_SMALLEST_POWER)
+                                        *real_result = negative ? -0.0 : 0.0;
+                                else
+                                        throw_parse_error(p, JSNPG_ERROR_NUMBER);
+                        } else {
+                                mis_adjust(mis, (byte *)end);
+                        }
                 }
                 return JSNPG_REAL;
         } else {
