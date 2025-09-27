@@ -37,8 +37,46 @@
  *   top level, or we need to go round again
  */
 
+typedef bool (*boolean)(void *, bool);
+typedef bool (*null)(void *); 
+typedef bool (*integer)(void *, long);
+typedef bool (*real)(void *, double);
+typedef bool (*string)(void *, const unsigned char *, size_t);
+typedef bool (*key)(void *, const unsigned char *, size_t);
+typedef bool (*start_array)(void *);
+typedef bool (*end_array)(void *);
+typedef bool (*start_object)(void *);
+typedef bool (*end_object)(void *);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+static bool void_boolean(void *ctx, bool is_true) { return true; }
+static bool void_null(void *ctx) { return true; }
+static bool void_integer(void *ctx, long integer) { return true; }
+static bool void_real(void *ctx, double real) { return true; }
+static bool void_string(void *ctx, const unsigned char *bytes, size_t length) { return true; }
+static bool void_key(void *ctx, const unsigned char *bytes , size_t length) { return true; }
+static bool void_start_array(void *ctx) { return true; }
+static bool void_end_array(void *ctx) { return true; }
+static bool void_start_object(void *ctx) { return true; }
+static bool void_end_object(void *ctx) { return true; }
+#pragma GCC diagnostic pop
+
 static void parse_generate(parser *p, generator *g)
 {
+        const boolean gen_boolean           = g->callbacks->boolean      ? g->callbacks->boolean      : void_boolean;
+        const null gen_null                 = g->callbacks->null         ? g->callbacks->null         : void_null;
+        const integer gen_integer           = g->callbacks->integer      ? g->callbacks->integer      : void_integer;
+        const real gen_real                 = g->callbacks->real         ? g->callbacks->real         : void_real;
+        const string gen_string             = g->callbacks->string       ? g->callbacks->string       : void_string;
+        const key gen_key                   = g->callbacks->key          ? g->callbacks->key          : void_key;
+        const start_array gen_start_array   = g->callbacks->start_array  ? g->callbacks->start_array  : void_start_array;
+        const end_array gen_end_array       = g->callbacks->end_array    ? g->callbacks->end_array    : void_end_array;
+        const start_object gen_start_object = g->callbacks->start_object ? g->callbacks->start_object : void_start_object;
+        const end_object gen_end_object     = g->callbacks->end_object   ? g->callbacks->end_object   : void_end_object;
+
+        void *gen_ctx = g->ctx;
+        
         memory_input_stream *const mis = p->mis;
         const unsigned flags = p->flags;
         const bool opt_trailing_commas = flags & JSNPG_ALLOW_TRAILING_COMMAS;
@@ -68,7 +106,7 @@ L_KEY:
                         if(!mis_consume_next(mis, ':'))
                                 throw_parse_error(p, JSNPG_ERROR_EXPECTED_KEY);
 
-                        if(!jsnpg_key(g, bytes, count)) 
+                        if(!gen_key(gen_ctx, bytes, count)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                 }
 L_VALUE:
@@ -76,7 +114,7 @@ L_VALUE:
                 switch(b) {
                 case '[':
                         stack_type = parse_start_array(p);
-                        if(!jsnpg_start_array(g)) 
+                        if(!gen_start_array(gen_ctx)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         if(opt_trailing_commas && mis_consume_next(mis, ',')) {
                                 if(!mis_consume_next(mis, ']'))
@@ -84,7 +122,7 @@ L_VALUE:
                         }
                         if(mis_next(mis, ']')) {
                                 stack_type = parse_end_array(p);
-                                if(!jsnpg_end_array(g))
+                                if(!gen_end_array(gen_ctx))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                                 break;
                         }
@@ -92,7 +130,7 @@ L_VALUE:
 
                 case '{':
                         stack_type = parse_start_object(p);
-                        if(!jsnpg_start_object(g)) 
+                        if(!gen_start_object(gen_ctx)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         if(opt_trailing_commas && mis_consume_next(mis, ',')) {
                                 if(!mis_consume_next(mis, '}'))
@@ -100,7 +138,7 @@ L_VALUE:
                         }
                         if(mis_next(mis, '}')) {
                                 stack_type = parse_end_object(p);
-                                if(!jsnpg_end_object(g))
+                                if(!gen_end_object(gen_ctx))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                                 break;
                         }
@@ -108,25 +146,25 @@ L_VALUE:
 
                 case '"':
                         count = parse_string(p, &bytes, validate_utf8);
-                        if(!jsnpg_string(g, bytes, count)) 
+                        if(!gen_string(gen_ctx, bytes, count)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         break;
 
                  case 't':
                         parse_true(p);
-                        if(!jsnpg_boolean(g, true)) 
+                        if(!gen_boolean(gen_ctx, true)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         break;
 
                 case 'f':
                         parse_false(p);
-                        if(!jsnpg_boolean(g, false)) 
+                        if(!gen_boolean(gen_ctx, false)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         break;
 
                 case 'n':
                         parse_null(p);
-                        if(!jsnpg_null(g)) 
+                        if(!gen_null(gen_ctx)) 
                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         break;
 
@@ -135,10 +173,10 @@ L_VALUE:
                                 double d;
                                 long l;
                                 if(JSNPG_REAL == parse_number(p, &d, &l)) {
-                                        if(!jsnpg_real(g, d)) 
+                                        if(!gen_real(gen_ctx, d)) 
                                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                                 } else {
-                                        if(!jsnpg_integer(g, l)) 
+                                        if(!gen_integer(gen_ctx, l)) 
                                                 throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                                 } 
                                 break;
@@ -160,11 +198,11 @@ L_VALUE:
                         }
                         if(mis_next(mis, '}') && stack_type == STACK_OBJECT) {
                                 stack_type = parse_end_object(p);
-                                if(!jsnpg_end_object(g))
+                                if(!gen_end_object(gen_ctx))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         } else if(mis_next(mis, ']') && stack_type == STACK_ARRAY) {
                                 stack_type = parse_end_array(p);
-                                if(!jsnpg_end_array(g))
+                                if(!gen_end_array(gen_ctx))
                                         throw_parse_error(p, JSNPG_ERROR_TERMINATED);
                         } else if(stack_type == STACK_NONE) {
                                 more_todo = false;
