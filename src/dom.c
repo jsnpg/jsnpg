@@ -283,6 +283,19 @@ static json_type dom_parse_next(parser *p)
 
 static parse_result dom_parse(parser *p, generator *g)
 {
+        const boolean gen_boolean           = g->callbacks->boolean      ? g->callbacks->boolean      : void_boolean;
+        const null gen_null                 = g->callbacks->null         ? g->callbacks->null         : void_null;
+        const integer gen_integer           = g->callbacks->integer      ? g->callbacks->integer      : void_integer;
+        const real gen_real                 = g->callbacks->real         ? g->callbacks->real         : void_real;
+        const string gen_string             = g->callbacks->string       ? g->callbacks->string       : void_string;
+        const key gen_key                   = g->callbacks->key          ? g->callbacks->key          : void_key;
+        const start_array gen_start_array   = g->callbacks->start_array  ? g->callbacks->start_array  : void_start_array;
+        const end_array gen_end_array       = g->callbacks->end_array    ? g->callbacks->end_array    : void_end_array;
+        const start_object gen_start_object = g->callbacks->start_object ? g->callbacks->start_object : void_start_object;
+        const end_object gen_end_object     = g->callbacks->end_object   ? g->callbacks->end_object   : void_end_object;
+
+        void *gen_ctx = g->ctx;
+
         size_t count;
         dom *hdr = p->dom_info.hdr;
         size_t offset = sizeof(dom);
@@ -300,7 +313,7 @@ static parse_result dom_parse(parser *p, generator *g)
                         count = node->is.count;
                         node++;
                         offset += NODE_SIZE;
-                        ok = jsnpg_string(g, node->is.bytes, count);
+                        ok = gen_string(gen_ctx, node->is.bytes, count);
                         break;
 
                 case JSNPG_KEY:
@@ -309,44 +322,44 @@ static parse_result dom_parse(parser *p, generator *g)
                         count = node->is.count;
                         node++;
                         offset += NODE_SIZE;
-                        ok = jsnpg_key(g, node->is.bytes, count);
+                        ok = gen_key(gen_ctx, node->is.bytes, count);
                         break;
 
                 case JSNPG_TRUE:
                 case JSNPG_FALSE:
-                        ok = jsnpg_boolean(g, type == JSNPG_TRUE);
+                        ok = gen_boolean(gen_ctx, type == JSNPG_TRUE);
                         break;
 
                 case JSNPG_NULL:
-                        ok = jsnpg_null(g);
+                        ok = gen_null(gen_ctx);
                         break;
 
                 case JSNPG_START_OBJECT:
-                        ok = jsnpg_start_object(g);
+                        ok = gen_start_object(gen_ctx);
                         break;
 
                 case JSNPG_END_OBJECT:
-                        ok = jsnpg_end_object(g);
+                        ok = gen_end_object(gen_ctx);
                         break;
 
                 case JSNPG_START_ARRAY:
-                        ok = jsnpg_start_array(g);
+                        ok = gen_start_array(gen_ctx);
                         break;
 
                 case JSNPG_END_ARRAY:
-                        ok = jsnpg_end_array(g);
+                        ok = gen_end_array(gen_ctx);
                         break;
 
                 case JSNPG_INTEGER:
                         node++;
                         offset += NODE_SIZE;
-                        ok = jsnpg_integer(g, node->is.integer);
+                        ok = gen_integer(gen_ctx, node->is.integer);
                         break;
 
                 case JSNPG_REAL:
                         node++;
                         offset += NODE_SIZE;
-                        ok = jsnpg_real(g, node->is.real);
+                        ok = gen_real(gen_ctx, node->is.real);
                         break;
 
                 default:

@@ -432,6 +432,117 @@ L_DONE:
         return src;
 }
 
+static const byte *parse_number_5(const byte *str, long *integer_result, int *exponent_result)
+{
+        byte d;
+        byte n;
+        unsigned dcount = 0;
+        unsigned long sum;
+        bool negative;
+        bool exp_negative;
+        int exponent = 0;
+        unsigned exp = 0;
+
+        const byte *src = str;
+
+        negative = *src == '-';
+        src += negative;
+        d = *src - '0';
+
+        if(d > 9) return NULL;
+
+        sum = d;
+        src++;
+        if(sum) {
+                for(dcount = 1 ; dcount < 19 ; dcount += 2, src += 2) {
+                        d = *src - '0';
+                        if(d > 9) goto L_DP;
+                        n = *(src + 1) - '0';
+                        if(n > 9) {
+                                sum = sum * 10 + d;
+                                dcount++;
+                                src++;
+                                goto L_DP;
+                        }
+                        sum = (sum * 100) + (d * 10) + n;
+                }
+
+                while(true) {
+                        d = *src - '0';
+                        if(d > 9) goto L_DP;
+                        exponent++;
+                        src++;
+                }
+        }
+        
+L_DP:
+        if(*src == '.') {
+                src++;
+                d = *src - '0';
+                if(d > 9) return NULL;
+
+                if(sum == 0 && d == 0) {
+                        do {
+                                src++;
+                                exponent--;
+                                d = *src - '0';
+                        } while(d == 0);
+
+                        if(d > 9) goto L_EXP;
+                }
+
+                sum = sum * 10 + d;
+                exponent--;
+                src++;
+                for( ; dcount < 19 ; dcount += 2, src += 2) {
+                        d = *src - '0';
+                        if(d > 9) goto L_EXP;
+                        n = *(src + 1) - '0';
+                        if(n > 9) {
+                                sum = sum * 10 + d;
+                                exponent--;
+                                dcount++;
+                                src++;
+                                goto L_EXP;
+                        }
+                        sum = (sum * 100) + (d * 10) + n;
+                        exponent -= 2;
+                }
+                while((*src - '0') < 10) {
+                        src++;
+                }
+        }
+
+L_EXP:
+        if(*src == 'e' || *src == 'E') {
+                src++;
+                exp_negative = *src == '-';
+                src += exp_negative || *src == '+';
+                d = *src - '0';
+                if(d > 9) return NULL;
+
+                exp = d;
+                for(int i = 0 ; i < 10 ; i++) {
+                        src++;
+                        d = *src - '0';
+                        if(d > 9) goto L_DONE;
+                        exp = exp * 10 + d;
+                }
+                if(!exp_negative) return NULL;
+        }
+
+L_DONE:
+        if(exp_negative && exp > 0)
+                exponent -= exp;
+        else
+                exponent += exp;
+
+        *integer_result = sum;
+        *exponent_result = exponent;
+
+        return src;
+}
+
 
 static inline const byte *skip_whitespace(const byte *bytes)
 {
@@ -481,6 +592,7 @@ int main(int argc, char **argv)
         run_n(times, "Parse 2", parse_number_2, bytes);
         run_n(times, "Parse 3", parse_number_3, bytes);
         run_n(times, "Parse 4", parse_number_4, bytes);
+        run_n(times, "Parse 5", parse_number_5, bytes);
         //
         // res = parse_number_1(bytes, &integer, &exponent);
         // printf("1: %ld %d\n", integer, exponent);

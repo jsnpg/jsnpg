@@ -241,3 +241,28 @@ Total time: 0.933779642s
 Type: 14, Returned 0
 Total time: 0.002013872s
 =====================================================================
+
+Performance timings: Sat 27 Sep 06:53:12 BST 2025
+
+commit 356ae120ea901552df621aa616f49049ae59796e
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Sat Sep 27 06:52:39 2025 +0100
+
+    Shortened parser calling generator path
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+Total time: 4.849318572s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+Total time: 1.334509840s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+Total time: 0.977330738s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+Total time: 0.002159221s
+=====================================================================

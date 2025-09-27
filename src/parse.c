@@ -37,31 +37,6 @@
  *   top level, or we need to go round again
  */
 
-typedef bool (*boolean)(void *, bool);
-typedef bool (*null)(void *); 
-typedef bool (*integer)(void *, long);
-typedef bool (*real)(void *, double);
-typedef bool (*string)(void *, const unsigned char *, size_t);
-typedef bool (*key)(void *, const unsigned char *, size_t);
-typedef bool (*start_array)(void *);
-typedef bool (*end_array)(void *);
-typedef bool (*start_object)(void *);
-typedef bool (*end_object)(void *);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static bool void_boolean(void *ctx, bool is_true) { return true; }
-static bool void_null(void *ctx) { return true; }
-static bool void_integer(void *ctx, long integer) { return true; }
-static bool void_real(void *ctx, double real) { return true; }
-static bool void_string(void *ctx, const unsigned char *bytes, size_t length) { return true; }
-static bool void_key(void *ctx, const unsigned char *bytes , size_t length) { return true; }
-static bool void_start_array(void *ctx) { return true; }
-static bool void_end_array(void *ctx) { return true; }
-static bool void_start_object(void *ctx) { return true; }
-static bool void_end_object(void *ctx) { return true; }
-#pragma GCC diagnostic pop
-
 static void parse_generate(parser *p, generator *g)
 {
         const boolean gen_boolean           = g->callbacks->boolean      ? g->callbacks->boolean      : void_boolean;

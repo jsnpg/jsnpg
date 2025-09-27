@@ -13,6 +13,59 @@
 
 #include "../src/include/jsnpg.h"
 
+static size_t total_size;
+static size_t total_realloc_size;
+static size_t total_realloc_moved_size;
+static int total_alloc;
+static int total_realloc;
+static int total_realloc_move;
+static int total_free;
+
+static void test_alloc_print()
+{
+        printf("Allocations       : %d\n", total_alloc);
+        printf("Allocated memory  : %ld\n", total_size);
+        printf("Reallocations     : %d\n", total_realloc);
+        printf("Memory moves      : %d\n", total_realloc_move);
+        printf("Reallocated memory: %ld\n", total_realloc_size);
+        printf("Moved memory      : %ld\n", total_realloc_moved_size);
+        printf("Frees             : %d\n", total_free);
+}
+
+static void *test_alloc(size_t size) 
+{
+        void *p = malloc(size);
+        if(p) {
+                total_alloc++;
+                total_size += size;
+        }
+        return p;
+}
+
+static void *test_realloc(void *o, size_t size)
+{
+        void *p = realloc(o, size);
+        if(p) {
+                total_realloc++;
+                total_realloc_size += size;
+                if(p != o) {
+                        total_realloc_move++;
+                        // this is inaccurate as only original size moved
+                        // but we dont remember what we allocated
+                        total_realloc_moved_size += size;
+                }
+        }
+        return p;
+}
+
+static void test_free(void *p)
+{
+        free(p);
+        if(p) {
+                total_free++;
+        }
+}
+
 typedef struct timespec timespec;
         
 static timespec time_sub(timespec end, timespec start)
@@ -85,6 +138,9 @@ int main(int argc, char *argv[])
                                 perror("Not a number");
                                 exit(1);
                         }
+                        if(times == 1) {
+                                jsnpg_set_allocators(test_alloc, test_realloc, test_free);
+                        }
                         FILE *fh = fopen(argv[3], "rb");
                         if(fh) {
                                 fseek(fh, 0L, SEEK_END);
@@ -123,12 +179,17 @@ int main(int argc, char *argv[])
                                         int ret = (res.type == JSNPG_EOF) ? 0 : 1;
                                         printf("Type: %d, Returned %d\n", res.type, ret);
                                         printf("Total time: %ld.%09lds\n", total_time.tv_sec, total_time.tv_nsec);
+                                        if(times == 1) {
+                                                test_alloc_print();
+                                        }
                                         return ret;
                                 } else {
                                         perror("Failed to allocate buffer");
                                         exit(1);
                                 }
                                 fclose(fh);
+
+
                         }
                 }
         } else {
