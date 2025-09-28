@@ -1,19 +1,16 @@
 
 #include <stdio.h>
 
-#include "bytemap.h"
-#include "bytemap.c"
 #include "digits.c"
 #include "util_timer.c"
 
 #define USAGE "number_parsers count filename"
-#define NO_DATA "invalid filename or empty file"
 #define FIRST_INT_DIGIT "First character must be a digit"
 #define FIRST_FRAC_DIGIT "First fractional character must be a digit"
 #define FIRST_EXP_DIGIT "First exponent character must be a digit"
 
 [[noreturn]]
-static void fail(char *msg)
+static void *log_error(char *msg)
 {
         fprintf(stderr, msg);
         exit(1);
@@ -41,7 +38,7 @@ static const byte *parse_number_1(const byte *str, long *integer_result, int *ex
         if(*src != '0') {
                 digit_parse i = parse_upto_19(src, 0);
                 if(i.count == 0)
-                        fail(FIRST_INT_DIGIT);
+                        return log_error(FIRST_INT_DIGIT);
                 src += i.count + i.trailing;
                 sig_digits = i.count;
                 sum = i.sum;
@@ -53,7 +50,7 @@ static const byte *parse_number_1(const byte *str, long *integer_result, int *ex
                         digit_parse f = parse_upto_19(src, sig_digits);
                         int fcount = f.count;
                         if(fcount == 0)
-                                fail(FIRST_FRAC_DIGIT);
+                                return log_error(FIRST_FRAC_DIGIT);
                         src += fcount + f.trailing;
                         sum *= pow10[fcount];
                         sum += f.sum;
@@ -71,7 +68,7 @@ static const byte *parse_number_1(const byte *str, long *integer_result, int *ex
                         src++;
                         force_double = true;
                         if(((byte)(*src - '0')) > 9)
-                                fail(FIRST_FRAC_DIGIT);
+                                return log_error(FIRST_FRAC_DIGIT);
 
                         while(*src == '0') {
                                 src++;
@@ -95,7 +92,7 @@ static const byte *parse_number_1(const byte *str, long *integer_result, int *ex
                 uint32_t exp = *src - '0';
                 src++;
                 if(exp > 9)
-                        fail(FIRST_EXP_DIGIT);
+                        return log_error(FIRST_EXP_DIGIT);
                 byte exp_n = *src - '0';
                 if(exp_n < 10) {
                         src++;
@@ -150,7 +147,7 @@ static const byte *parse_number_2(const byte *str, long *integer_result, int *ex
                 ep = (!dp) && (*src == 'e' || *src == 'E');
 
                 if(digits == 0)
-                        fail(FIRST_INT_DIGIT);
+                        return log_error(FIRST_INT_DIGIT);
 
                 use_digits = sig_digits[dgt];
                 exponent = digits - use_digits;
@@ -166,7 +163,7 @@ static const byte *parse_number_2(const byte *str, long *integer_result, int *ex
                         ep = *src == 'e' || *src == 'E';
 
                         if(err)
-                                fail(FIRST_FRAC_DIGIT);
+                                return log_error(FIRST_FRAC_DIGIT);
 
                         use_digits = sig_digits[fgt] - use_digits;
                         exponent -= use_digits;
@@ -192,7 +189,7 @@ static const byte *parse_number_2(const byte *str, long *integer_result, int *ex
                         ep = *src == 'e' || *src == 'E';
 
                         if(err)
-                                fail(FIRST_FRAC_DIGIT);
+                                return log_error(FIRST_FRAC_DIGIT);
 
                         use_digits = sig_digits[fgt];
                         sum = parse_digits(nums, 0, use_digits);
@@ -206,7 +203,7 @@ static const byte *parse_number_2(const byte *str, long *integer_result, int *ex
                 uint32_t exp = *src - '0';
                 src++;
                 if(exp > 9)
-                        fail(FIRST_EXP_DIGIT);
+                        return log_error(FIRST_EXP_DIGIT);
                 uint32_t exp_n = *src - '0';
                 if(exp_n < 10) {
                         src++;
@@ -267,7 +264,7 @@ static const byte *parse_number_3(const byte *str, long *integer_result, int *ex
                 sum = c;
                 sig_digits += (sum != 0);
         } else {
-                fail(FIRST_INT_DIGIT);
+                return log_error(FIRST_INT_DIGIT);
         }
 
         c = *src - '0';
@@ -288,7 +285,7 @@ static const byte *parse_number_3(const byte *str, long *integer_result, int *ex
 
                 c = *src - '0';
                 if(c >= 10)
-                        fail(FIRST_FRAC_DIGIT);
+                        return log_error(FIRST_FRAC_DIGIT);
 
                 do {
                         src++;
@@ -318,7 +315,7 @@ static const byte *parse_number_3(const byte *str, long *integer_result, int *ex
                 }
                 c -= '0';
                 if(c >= 10)
-                        fail(FIRST_EXP_DIGIT);
+                        return log_error(FIRST_EXP_DIGIT);
 
                do {
                         src++;
@@ -345,6 +342,114 @@ static const byte *parse_number_4(const byte *str, long *integer_result, int *ex
 {
         byte d;
         unsigned dcount = 0;
+        int ecount = 0;
+        unsigned long sum;
+        bool negative;
+        bool exp_negative;
+        unsigned exp = 0;
+
+        const byte *src = str;
+        const byte *int_start;
+        const byte *dec_pt;
+        const byte *frac_start;
+
+        negative = *src == '-';
+        src += negative;
+        d = *src - '0';
+
+        if(d > 9) return NULL;
+
+        sum = d;
+        src++;
+        if(sum) {
+                int_start = src--;
+                while((d = *src - '0') < 10) {
+                        src++;
+                        sum = sum * 10 + d;
+                }
+                if(*src == '.') {
+                        dec_pt = src;
+                        src++;
+                        d = *src - '0';
+                        if(d > 9) return NULL;
+                        frac_start = src;
+                        do {
+                                sum = sum * 10 + d;
+                                src++;
+                                d = *src - '0';
+                        } while(d < 10);
+                } else {
+                        dec_pt = frac_start = src;
+                }
+        } else if(*src == '.') {
+                int_start = src;
+                dec_pt = src;
+                src++;
+                d = *src - '0';
+                if(d > 9) return NULL;
+                while(d == 0) {
+                        src++;
+                        d = *src - '0';
+                }
+                frac_start = src;
+                while(d < 10) {
+                        sum = sum * 10 + d;
+                        src++;
+                        d = *src - '0';
+                }
+        } else {
+                dec_pt = frac_start = src;
+        }
+        const int pre_dp = dec_pt - int_start;
+        const int post_dp = src - frac_start;
+
+        dcount = pre_dp + post_dp;
+        ecount = src - dec_pt;
+        if(dcount > 19) {
+                // in the unlikely event we have more than 19 chars
+                // then the sum will have overflowed so recalculate
+                // we know that they are all digits so no need too test
+                const char *tmp = start;
+                const int first_set = pre_dp > 20 ? 20 : pre_dp;
+                sum = 0;
+                for(int i = 0 ; i < first_set ; i++)
+                        sum = sum * 10 + tmp[i] - '0';
+
+                for(int i = first_set  + 1 ; i < 21 ; i++)
+                        sum = sum * 10 + tmp[i] - '0';
+
+                ecount += dcount - 19;
+        }
+
+        if(*src == 'e' || *src == 'E') {
+                src++;
+                exp_negative = *src == '-';
+                src += exp_negative || *src == '+';
+                d = *src - '0';
+                if(d > 9) return NULL;
+
+                do {
+                        exp = exp * 10 + d;
+                        src++;
+                        d = *src - '0';
+                } while(d > 9 && exp < 100000);
+
+                ecount += exp_negative ? -exp : exp;
+        }
+
+        sum = negative ? -sum : sum;
+
+        *integer_result = sum;
+        *exponent_result = ecount;
+
+        return src;
+}
+
+static const byte *parse_number_5(const byte *str, long *integer_result, int *exponent_result)
+{
+        byte d;
+        byte n;
+        unsigned dcount = 0;
         unsigned long sum;
         bool negative;
         bool exp_negative;
@@ -362,11 +467,19 @@ static const byte *parse_number_4(const byte *str, long *integer_result, int *ex
         sum = d;
         src++;
         if(sum) {
-                for(dcount = 1 ; dcount < 19 ; dcount++, src++) {
+                for(dcount = 1 ; dcount < 19 ; dcount += 2, src += 2) {
                         d = *src - '0';
                         if(d > 9) goto L_DP;
-                        sum = sum * 10 + d;
+                        n = *(src + 1) - '0';
+                        if(n > 9) {
+                                sum = sum * 10 + d;
+                                dcount++;
+                                src++;
+                                goto L_DP;
+                        }
+                        sum = (sum * 100) + (d * 10) + n;
                 }
+
                 while(true) {
                         d = *src - '0';
                         if(d > 9) goto L_DP;
@@ -394,11 +507,19 @@ L_DP:
                 sum = sum * 10 + d;
                 exponent--;
                 src++;
-                for( ; dcount < 19 ; dcount++, src++) {
+                for( ; dcount < 19 ; dcount += 2, src += 2) {
                         d = *src - '0';
                         if(d > 9) goto L_EXP;
-                        sum = sum * 10 + d;
-                        exponent--;
+                        n = *(src + 1) - '0';
+                        if(n > 9) {
+                                sum = sum * 10 + d;
+                                exponent--;
+                                dcount++;
+                                src++;
+                                goto L_EXP;
+                        }
+                        sum = (sum * 100) + (d * 10) + n;
+                        exponent -= 2;
                 }
                 while((*src - '0') < 10) {
                         src++;
@@ -429,105 +550,16 @@ L_DONE:
         else
                 exponent += exp;
 
-        *integer_result = negative ? -sum : sum;
+        *integer_result = sum;
         *exponent_result = exponent;
 
         return src;
 }
 
-static const byte *parse_number_5(const byte *str, long *integer_result, int *exponent_result)
-{
-        uint64_t sum = 0;
-        int pos = 0;
-        int exponent = 0;
-        bool exp_negative;
-        int exp;
-
-        const byte *src = str;
-
-        bool negative = *src == '-';
-        src += negative;
-
-        unsigned dtype = byte_map_digits[*src];
-        if(dtype > 9)
-                return NULL;
-        sum = dtype;
-        pos = 1;
-        if(!!sum) {
-                while(pos < 18) {
-                        dtype = byte_map_digits[src[pos++]];
-                        if(dtype > 9) goto L5_DP;
-                        sum = sum * 10 + dtype;
-                }
-                while((dtype = byte_map_digits[src[pos++]] < 10))
-                        exponent++;
-        } else {
-                dtype = byte_map_digits[src[pos++]];
-        }
-L5_DP:
-        if(dtype == BYTE_MAP_DIGIT_DECIMAL_POINT) {
-                dtype = byte_map_digits[src[pos++]];
-                if(dtype > 9)
-                        return NULL;
-                if(sum == 0 && dtype == 0) {
-                        do {
-                                exponent--;
-                                dtype = byte_map_digits[src[pos++]];
-                        } while(dtype == 0);
-                        if(dtype > 9) goto L5_EXP;
-                }
-                sum = sum * 10 + dtype;
-                while(pos < 19) {
-                        dtype = byte_map_digits[src[pos++]];
-                        if(dtype > 9) goto L5_EXP;
-                        sum = sum * 10 + dtype;
-                        exponent--;
-                }
-                while((dtype = byte_map_digits[src[pos++]] < 10))
-                                ;
-        }
-L5_EXP:
-       if(dtype == BYTE_MAP_DIGIT_EXPONENT) {
-                dtype = byte_map_digits[src[pos++]];
-                
-                exp_negative = dtype == BYTE_MAP_DIGIT_MINUS;
-                if(exp_negative || dtype == BYTE_MAP_DIGIT_PLUS)
-                        dtype = byte_map_digits[src[pos++]];
-
-                
-                if(dtype > 9)
-                        return NULL;
-
-                exp = dtype;
-                for(int i = 0 ; i < 10 ; i++) {
-                        dtype = byte_map_digits[src[pos++]];
-                        if(dtype > 9) goto L_DONE;
-                        exp = exp * 10 + dtype;
-                }
-                if(!exp_negative)
-                        return NULL;
-        }
-
-L_DONE:
-        if(exp_negative && exp > 0)
-                exponent -= exp;
-        else
-                exponent += exp; 
-
-        *integer_result = negative ? -sum : sum;
-        *exponent_result = exponent;
-
-        return src + (pos - 1);
-}
-
-
-
 
 static inline const byte *skip_whitespace(const byte *bytes)
 {
         byte c;
-        if(!bytes) return NULL;
-
         while((c = *bytes) == ' ' || c == '\n' || c == '\r')
                 bytes++;
         return bytes;
@@ -562,13 +594,12 @@ static void run_n(unsigned times,
 
 int main(int argc, char **argv)
 {
-        if(argc != 3) fail(USAGE);
+        if(argc != 3) return log_error(USAGE),0;
 
         int times = strtol(argv[1], NULL, 10);
-        if(times < 1) fail(USAGE);
+        if(times < 1) return log_error(USAGE),0;
 
         const byte *bytes = read_file(argv[2]);
-        if(!bytes) fail(NO_DATA);
 
         run_n(times, "Parse 1", parse_number_1, bytes);
         run_n(times, "Parse 2", parse_number_2, bytes);

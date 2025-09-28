@@ -691,15 +691,148 @@ static inline size_t parse_string(parser *p, byte **bytes, const bool validate_u
 // }
 // #pragma GCC diagnostic pop
 
+// static json_type parse_number(parser *p, double *real_result, long *integer_result)
+// {
+//         byte d;
+//         bool floating_point = false;
+//         unsigned dcount = 0;
+//         unsigned long sum;
+//         bool exp_negative;
+//         int exponent = 0;
+//         unsigned exp = 0;
+//
+//         memory_input_stream *const mis = p->mis;
+//
+//         // If fast parsing fails might need to call
+//         // strtod, which needs to start from the beginning
+//         size_t start_pos = mis_tell(mis);
+//
+//         const byte *src = mis_current(mis);
+//
+//         const bool negative = *src == '-';
+//         src += negative;
+//         d = *src - '0';
+//
+//         if(d > 9)
+//                 throw_parse_error(p, JSNPG_ERROR_NUMBER);
+//
+//         sum = d;
+//         src++;
+//         if(sum) {
+//                 for(dcount = 1 ; dcount < 19 ; dcount++, src++) {
+//                         d = *src - '0';
+//                         if(d > 9) goto L_DP;
+//                         sum = sum * 10 + d;
+//                 }
+//                 while(true) {
+//                         d = *src - '0';
+//                         if(d > 9) goto L_DP;
+//                         dcount++;
+//                         exponent++;
+//                         src++;
+//                 }
+//         }
+//
+// L_DP:
+//         if(*src == '.') {
+//                 floating_point = true;
+//                 src++;
+//                 d = *src - '0';
+//                 if(d > 9) 
+//                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
+//
+//                 if(sum == 0 && d == 0) {
+//                         do {
+//                                 src++;
+//                                 exponent--;
+//                                 d = *src - '0';
+//                         } while(d == 0);
+//
+//                         if(d > 9) goto L_EXP;
+//                 }
+//
+//                 src++;
+//
+//                 // dcount will now be out by 1 but it doesn't matter as
+//                 // we will still collect the right number of digits
+//                 // and we already know we are floating point
+//
+//                 for( ; dcount < 19 ; dcount++, src++) {
+//                         sum = sum * 10 + d;
+//                         exponent--;
+//                         d = *src - '0';
+//                         if(d > 9) goto L_EXP;
+//                 }
+//                 d = *src - '0';
+//                 while(d < 10) {
+//                         dcount++;
+//                         src++;
+//                         d = *src - '0';
+//                 }
+//         }
+//
+// L_EXP:
+//         if(*src == 'e' || *src == 'E') {
+//                 floating_point = true;
+//                 src++;
+//                 exp_negative = *src == '-';
+//                 src += exp_negative || *src == '+';
+//                 d = *src - '0';
+//                 if(d > 9)
+//                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
+//
+//                 exp = d;
+//                 for(int i = 0 ; i < 10 ; i++) {
+//                         src++;
+//                         d = *src - '0';
+//                         if(d > 9) goto L_DONE;
+//                         exp = exp * 10 + d;
+//                 }
+//                 if(!exp_negative)
+//                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
+//         }
+//
+// L_DONE:
+//         if(exp_negative && exp > 0)
+//                 exponent -= exp;
+//         else
+//                 exponent += exp;
+//
+//         mis_adjust(mis, (byte *)src);
+//         if(floating_point || dcount > 19  || sum > (((uint64_t)LONG_MAX) + negative)) {
+//                 bool success = false;
+//                 if (exponent >= FASTFLOAT_SMALLEST_POWER &&
+//                                 exponent <= FASTFLOAT_LARGEST_POWER) {
+//                         *real_result = compute_float_64(exponent, sum, negative, &success);
+//                 }
+//                 if(!success) {
+//                         const char *start = (const char *)mis_at(mis, start_pos);
+//                         char *end = parse_float_strtod(start, real_result);
+//                         if(!end) {
+//                                 if(exponent < FASTFLOAT_SMALLEST_POWER)
+//                                         *real_result = negative ? -0.0 : 0.0;
+//                                 else
+//                                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
+//                         } else {
+//                                 mis_adjust(mis, (byte *)end);
+//                         }
+//                 }
+//                 return JSNPG_REAL;
+//         } else {
+//                 *integer_result = negative ? -sum : sum;
+//                 return JSNPG_INTEGER;
+//         }
+// }
+//
+
 static json_type parse_number(parser *p, double *real_result, long *integer_result)
 {
-        byte d;
-        bool floating_point = false;
-        unsigned dcount = 0;
-        unsigned long sum;
-        bool exp_negative;
+        uint64_t sum = 0;
+        size_t pos = 0;
         int exponent = 0;
-        unsigned exp = 0;
+        bool exp_negative = false;
+        int exp = 0;
+        bool is_real = false;
 
         memory_input_stream *const mis = p->mis;
 
@@ -709,84 +842,72 @@ static json_type parse_number(parser *p, double *real_result, long *integer_resu
 
         const byte *src = mis_current(mis);
 
-        const bool negative = *src == '-';
+        bool negative = *src == '-';
         src += negative;
-        d = *src - '0';
 
-        if(d > 9)
+        unsigned dtype = byte_map_digits[*src];
+        if(dtype > 9)
                 throw_parse_error(p, JSNPG_ERROR_NUMBER);
-
-        sum = d;
-        src++;
-        if(sum) {
-                for(dcount = 1 ; dcount < 19 ; dcount++, src++) {
-                        d = *src - '0';
-                        if(d > 9) goto L_DP;
-                        sum = sum * 10 + d;
-                }
-                while(true) {
-                        d = *src - '0';
-                        if(d > 9) goto L_DP;
-                        dcount++;
-                        exponent++;
-                        src++;
-                }
-        }
         
-L_DP:
-        if(*src == '.') {
-                floating_point = true;
-                src++;
-                d = *src - '0';
-                if(d > 9) 
-                        throw_parse_error(p, JSNPG_ERROR_NUMBER);
-
-                if(sum == 0 && d == 0) {
-                        do {
-                                src++;
-                                exponent--;
-                                d = *src - '0';
-                        } while(d == 0);
-
-                        if(d > 9) goto L_EXP;
+        sum = dtype;
+        pos = 1;
+        if(!!sum) {
+                while(pos < 19) {
+                        dtype = byte_map_digits[src[pos++]];
+                        if(dtype > 9) goto L5_DP;
+                        sum = sum * 10 + dtype;
                 }
-
-                src++;
-
-                // dcount will now be out by 1 but it doesn't matter as
-                // we will still collect the right number of digits
-                // and we already know we are floating point
-
-                for( ; dcount < 19 ; dcount++, src++) {
-                        sum = sum * 10 + d;
-                        exponent--;
-                        d = *src - '0';
-                        if(d > 9) goto L_EXP;
-                }
-                d = *src - '0';
-                while(d < 10) {
-                        dcount++;
-                        src++;
-                        d = *src - '0';
-                }
+                while((dtype = byte_map_digits[src[pos++]]) < 10)
+                        exponent++;
+        } else {
+                dtype = byte_map_digits[src[pos++]];
         }
+L5_DP: 
+        int dcount = pos - 1;
 
-L_EXP:
-        if(*src == 'e' || *src == 'E') {
-                floating_point = true;
-                src++;
-                exp_negative = *src == '-';
-                src += exp_negative || *src == '+';
-                d = *src - '0';
-                if(d > 9)
+        if(dtype == BYTE_MAP_DIGIT_DECIMAL_POINT) {
+                is_real = true;
+                dtype = byte_map_digits[src[pos++]];
+                if(dtype > 9)
                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
 
-                exp = d;
+                if(sum == 0 && dtype == 0) {
+                        do {
+                                exponent--;
+                                dtype = byte_map_digits[src[pos++]];
+                        } while(dtype == 0);
+                        if(dtype > 9) goto L5_EXP;
+                }
+                exponent--;
+                sum = sum * 10 + dtype;
+
+                size_t max_pos = pos + 18 - dcount;
+                while(pos < max_pos) {
+                        dtype = byte_map_digits[src[pos++]];
+                        if(dtype > 9) goto L5_EXP;
+                        sum = sum * 10 + dtype;
+                        exponent--;
+                }
+                while((dtype = byte_map_digits[src[pos++]]) < 10)
+                                ;
+        }
+L5_EXP:
+        if(dtype == BYTE_MAP_DIGIT_EXPONENT) {
+                is_real = true;
+                dtype = byte_map_digits[src[pos++]];
+                
+                exp_negative = dtype == BYTE_MAP_DIGIT_MINUS;
+                if(exp_negative || dtype == BYTE_MAP_DIGIT_PLUS)
+                        dtype = byte_map_digits[src[pos++]];
+
+                if(dtype > 9)
+                        throw_parse_error(p, JSNPG_ERROR_NUMBER);
+
+                exp = dtype;
                 for(int i = 0 ; i < 10 ; i++) {
-                        src++;
-                        d = *src - '0';
-                        if(d > 9) goto L_DONE;
-                        exp = exp * 10 + d;
+                        dtype = byte_map_digits[src[pos++]];
+                        if(dtype > 9) goto L_DONE;
+                        exp = exp * 10 + dtype;
                 }
                 if(!exp_negative)
                         throw_parse_error(p, JSNPG_ERROR_NUMBER);
@@ -796,10 +917,11 @@ L_DONE:
         if(exp_negative && exp > 0)
                 exponent -= exp;
         else
-                exponent += exp;
+                exponent += exp; 
 
-        mis_adjust(mis, (byte *)src);
-        if(floating_point || dcount > 19  || sum > (((uint64_t)LONG_MAX) + negative)) {
+        mis_adjust(mis, (byte *)(src + (pos - 1)));
+
+        if(is_real || exponent != 0 || sum > (((uint64_t)LONG_MAX) + negative)) {
                 bool success = false;
                 if (exponent >= FASTFLOAT_SMALLEST_POWER &&
                                 exponent <= FASTFLOAT_LARGEST_POWER) {
@@ -823,8 +945,6 @@ L_DONE:
                 return JSNPG_INTEGER;
         }
 }
-
-
 
 static byte *copy_bytes(allocator *a, byte *bytes, size_t count)
 {

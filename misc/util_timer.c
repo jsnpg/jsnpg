@@ -51,6 +51,7 @@ static unsigned char *read_file(char *filename)
                 unsigned char *buf = malloc(length + 32);
                 if(buf) {
                         fread(buf, length, 1, fh);
+                        memset(buf + length, '\0', 32);
                         return buf;
                 }
                 fclose(fh);

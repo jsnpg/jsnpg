@@ -9,7 +9,7 @@
 #define BYTE_1_9                (1 << 6)
 #define BYTE_HEX_DIGIT          (1 << 7)
 #define BYTE_EXPONENT           (1 << 8)
-#define BYTE_EXPONENT_SIGN      (1 << 9)
+#define BYTE_DECIMAL_POINT      (1 << 9)
 #define BYTE_ESCAPE             (1 << 10)
 #define BYTE_LEADER_2           (1 << 11)
 #define BYTE_LEADER_3           (1 << 12)
@@ -19,6 +19,14 @@
 #define BYTE_ED_NEXT            (1 << 16)
 #define BYTE_F0_NEXT            (1 << 17)
 #define BYTE_F4_NEXT            (1 << 18)
+#define BYTE_MINUS              (1 << 19)
+#define BYTE_PLUS               (1 << 20)
+
+#define BYTE_MAP_DIGIT_DECIMAL_POINT    10
+#define BYTE_MAP_DIGIT_EXPONENT         11
+#define BYTE_MAP_DIGIT_MINUS            12
+#define BYTE_MAP_DIGIT_PLUS             13
+       
 
 int main()
 {
@@ -41,11 +49,11 @@ int main()
                 else if(i < '+')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '+')
-                        mask = BYTE_ASCII_STRING;
+                        mask = BYTE_ASCII_STRING | BYTE_PLUS;
                 else if(i == ',')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '-')
-                        mask = BYTE_ASCII_STRING;
+                        mask = BYTE_ASCII_STRING | BYTE_MINUS;
                 else if(i == '.')
                         mask = BYTE_ASCII_STRING;
                 else if(i == '/')
@@ -58,6 +66,10 @@ int main()
                         mask = BYTE_ASCII_STRING;
                 else if(i < 'A')
                         mask = BYTE_ASCII_STRING;
+                else if(i < 'E')
+                        mask = BYTE_ASCII_STRING | BYTE_HEX_DIGIT;
+                else if(i == 'E')
+                        mask = BYTE_ASCII_STRING | BYTE_HEX_DIGIT | BYTE_EXPONENT;
                 else if(i <= 'F')
                         mask = BYTE_ASCII_STRING | BYTE_HEX_DIGIT;
                 else if(i < '[')
@@ -70,6 +82,10 @@ int main()
                         mask = BYTE_ASCII_STRING;
                 else if(i < 'a')
                         mask = BYTE_ASCII_STRING;
+                else if(i < 'e')
+                        mask = BYTE_ASCII_STRING | BYTE_HEX_DIGIT;
+                else if(i == 'e')
+                        mask = BYTE_ASCII_STRING | BYTE_HEX_DIGIT | BYTE_EXPONENT;
                 else if(i < 'g')
                         mask = BYTE_ASCII_STRING | BYTE_HEX_DIGIT;
                 else if(i < '{')
@@ -145,6 +161,33 @@ int main()
         }
         printf("\n};");
 
+        printf("\nstatic const unsigned byte_map_digits[] = {");
+        for(int i = 0 ; i < 256 ; i++) {
+                unsigned value;
+
+                if(i >= '0' && i <= '9')
+                        value = i - '0';
+                else if(i == '.')
+                        value = BYTE_MAP_DIGIT_DECIMAL_POINT;
+                else if(i == 'e' || i == 'E')
+                        value = BYTE_MAP_DIGIT_EXPONENT;
+                else if(i == '-')
+                        value = BYTE_MAP_DIGIT_MINUS;
+                else if(i == '+')
+                        value = BYTE_MAP_DIGIT_PLUS;
+                else
+                        value = 0xFF;
+
+               if(i == 0)
+                        printf("\n        ");
+                else if(0 == i % 8)
+                        printf(",\n        ");
+                else
+                        printf(", ");
+
+                printf("0x%X", value);
+        }
+        printf("\n};");
 }
 
 

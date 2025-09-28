@@ -1431,8 +1431,12 @@ static inline char* FormatDigits(char* buffer, uint64_t digits, int32_t decimal_
         const int32_t scientific_exponent = decimal_point - 1;
 //      SF_ASSERT(scientific_exponent != 0);
 
-        memcpy(buffer, scientific_exponent < 0 ? "e-" : "e+", 2);
-        buffer += 2;
+        buffer[0] = 'e';
+        buffer++;
+        if(scientific_exponent < 0) {
+                buffer[0] = '-';
+                buffer++;
+        }
 
         const uint32_t k = (uint32_t)(scientific_exponent < 0 ? -scientific_exponent : scientific_exponent);
         if (k < 10)
