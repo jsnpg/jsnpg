@@ -266,3 +266,28 @@ Total time: 0.977330738s
 Type: 14, Returned 0
 Total time: 0.002159221s
 =====================================================================
+
+Performance timings: Sun 28 Sep 22:52:46 BST 2025
+
+commit 49ab2bea1d02408d2f541074d55bb92a2de7cce4
+Author: Bob Davison <bobd91@googlemail.com>
+Date:   Sun Sep 28 22:52:27 2025 +0100
+
+    Number parsing improvements.  Removed explicit + on positive exponent output.
+
+./testutil -t 1000 json/input/canada.json
+Type: 14, Returned 0
+Total time: 4.689071551s
+
+./testutil -t 1000 json/input/citm_catalog.json
+Type: 14, Returned 0
+Total time: 1.317748076s
+
+./testutil -t 1000 json/input/twitter.json
+Type: 14, Returned 0
+Total time: 0.901242909s
+
+./testutil -t 1000 json/input/pass01.json
+Type: 14, Returned 0
+Total time: 0.002142073s
+=====================================================================
