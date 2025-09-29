@@ -8,10 +8,22 @@
  *   stores parse results in memory so that they can be replayed
  *
  *   dom_generator creates the in memory data structure
- *   dom_parse/dom_parse_next replay the data as if from a regular parse
+ *   dom_parse/dom_parse_next replays the data as if from a regular parse
  */
 
-#include <stdint.h>
+/*
+ * Most JSON items just require one dom_node to store the type
+ *
+ * Numbers require an extra node to store the long or double value
+ *
+ * Strings and keys need two extra nodes, one for the byte count in the string
+ * and one for a pointer to the string
+ *
+ * The actual string bytes are held by the allocator that holds the dom nodes
+ * so they will be deallocated together.
+ */
+
+#include <stdint.h> 
 
 #define DOM_MIN_SIZE 8192
 #define NODE_SIZE (sizeof(dom_node))

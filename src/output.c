@@ -9,6 +9,7 @@
  */
 
 #include <stddef.h>
+#include <assert.h>
 
 #define MOS_DEFAULT_CAPACITY 4096;
 
@@ -105,9 +106,9 @@ static inline bool mos_puts(memory_output_stream *mos, const byte *string, size_
 
 static inline void mos_adjust(memory_output_stream *mos, long amount)
 {
-        ASSERT((long)(mos->count) + amount >= 0);
+        assert((long)(mos->count) + amount >= 0);
 
-        // Keeping compilers happy :(
+        // Keeping compilers happy
         mos->count = (size_t)((long)(mos->count) + amount);
 }
 
@@ -263,7 +264,7 @@ static inline bool jos_puti(json_output_stream *jos, long integer)
                 return false;
         long count = i64toa(integer, s) - s;
 
-        ASSERT(count <= buf_len);
+        assert(count <= buf_len);
         mos_adjust(jos->mos, count - buf_len);
 
         return true;
@@ -279,7 +280,7 @@ static inline bool jos_putr(json_output_stream *jos, double real)
 
         long count = dtoa(s, real) - s;
 
-        ASSERT(count <= buf_len);
+        assert(count <= buf_len);
         mos_adjust(jos->mos, count - buf_len);
 
         return true;

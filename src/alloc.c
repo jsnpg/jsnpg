@@ -51,9 +51,6 @@ static allocator *allocator_new()
                 return NULL;
         }
 
-        JSNPG_LOG("Arena %p created with allocation buffer %p\n", 
-                        a, ALLOCATOR_DEFAULT_ALLOCS, allocs);
-
         a->used = 0;
         a->capacity = ALLOCATOR_DEFAULT_ALLOCS;
         a->allocs = allocs;
@@ -67,14 +64,11 @@ static void allocator_free(allocator *a)
                 return;
         
         for(size_t i = 0 ; i < a->used ; i++) {
-                JSNPG_LOG("Allocation[%ld] %p freed\n", i, a->allocs[i]);
                 pg_dealloc(a->allocs[i]);
         }
 
-        JSNPG_LOG("Allocation buffer %p freed\n", a->allocs);
         pg_dealloc(a->allocs);
 
-        JSNPG_LOG("Arena %p freed\n", a);
         pg_dealloc(a);
 }
 
@@ -92,8 +86,6 @@ static void *allocator_alloc(allocator *a, size_t size)
         if(!p)
                 return NULL;
 
-        JSNPG_LOG("Arena %p allocated %ld bytes to %p\n", a, size, p);
-
         a->allocs[a->used++] = p;
         return p;
 }
@@ -105,9 +97,6 @@ static void *allocator_realloc(allocator *a, void *p, size_t new_size)
                         void *np = pg_realloc(p, new_size);
                         if(!np)
                                 return NULL;
-
-                        JSNPG_LOG("Arena %p reallocated %ld bytes from %p to %p\n",
-                                        a, new_size, p, np);
 
                         a->allocs[i] = np;
                         return np;

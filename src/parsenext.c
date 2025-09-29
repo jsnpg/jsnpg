@@ -30,6 +30,8 @@
  * STATE_ARRAY_COMMA    - in array after , 
  */ 
 
+#include <assert.h>
+
 static inline parse_state state_change_value(parse_state state)
 {
         if(state == STATE_START) return STATE_DONE;

@@ -57,11 +57,6 @@ static inline bool is_surrogate(unsigned cp)
         return cp >= SURROGATE_MIN && cp <= SURROGATE_MAX;
 }
 
-static inline bool is_valid_codepoint(unsigned cp) 
-{
-        return cp <= CODEPOINT_MAX && !is_surrogate(cp);
-}
-
 /*
  * Writes a Unicode codepoint as utf-8 bytes to the provided 
  * byte array point
@@ -110,57 +105,6 @@ static void utf8_encode(unsigned cp, byte **bytes)
                 shift -= 6;
                 *((*bytes)++) = CONTINUATION_BYTE | LO_6_BITS(cp >> shift);
         }
-}
-
-/*
- * Validates a sequence of utf-8 bytes (1-4 bytes) and 
- * returns the byte length if valid, else -1
- */
-static int utf8_validate_sequence(const byte *bytes, size_t count) 
-{
-        unsigned codepoint;
-        unsigned bar;
-        unsigned cont;
-        byte b = *bytes++;
-
-        if(IS_2_BYTE_LEADER(b)) {
-                codepoint = LO_5_BITS(b);
-                bar = _1_BYTE_MAX + 1;
-                cont = 1;
-        } else if(IS_3_BYTE_LEADER(b)) {
-                codepoint = LO_4_BITS(b);
-                bar = _2_BYTE_MAX + 1;
-                cont = 2;
-        } else if(IS_4_BYTE_LEADER(b)) {
-                codepoint = LO_3_BITS(b);
-                bar = _3_BYTE_MAX + 1;
-                cont = 3;
-        } else if(b <= _1_BYTE_MAX) {
-                codepoint = b;
-                bar = 0;
-                cont = 0;
-        } else {
-                return -1;
-        }
-
-        // Do we have enough input for leader and continuation bytes
-        if(count < 1 + cont)
-                return -1;
-
-        unsigned length;
-        for(length = 1 ; length <= cont ; length++) {
-                b = *bytes++;
-                if(!IS_CONTINUATION(b)) 
-                        return -1;
-                codepoint = (codepoint << 6) | LO_6_BITS(b);
-        }
-
-        // If we got here then either all valid or all invalid
-        // Could be an overlong encoding or an encoding of an invalid codepoint
-        if(codepoint < bar || !is_valid_codepoint(codepoint)) 
-                return -1;
-
-        return (int)length;
 }
 
 /*

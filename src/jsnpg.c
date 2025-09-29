@@ -7,7 +7,6 @@
  */
 
 #include "include/jsnpg.h"
-#include "common.h"
 #include "types.h"
 #include "bytemap.h"
 #include "generate.h"
@@ -17,8 +16,6 @@
 #include "thirdparty/dragonbox.c"
 #include "thirdparty/itoa.c"
 
-//#define JSNPG_DEBUG
-#include "debug.c"
 #include "alloc.c"
 #include "bytemap.c"
 #include "utf8.c"

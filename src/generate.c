@@ -103,70 +103,70 @@ static bool can_pop(generator *g, int type)
 
 bool jsnpg_null(generator *g)
 {
-        ASSERT(can_value(g));
+        assert(can_value(g));
 
         return (!g->callbacks->null) || g->callbacks->null(g->ctx);
 }
 
 bool jsnpg_boolean(generator *g, bool is_true)
 {
-        ASSERT(can_value(g));
+        assert(can_value(g));
 
         return  (!g->callbacks->boolean) || g->callbacks->boolean(g->ctx, is_true);
 }
 
 bool jsnpg_integer(generator *g, long integer)
 {
-        ASSERT(can_value(g));
+        assert(can_value(g));
 
         return  (!g->callbacks->integer) || g->callbacks->integer(g->ctx, integer);
 }
 
 bool jsnpg_real(generator *g, double real)
 {
-        ASSERT(can_value(g));
+        assert(can_value(g));
 
         return  (!g->callbacks->real) || g->callbacks->real(g->ctx, real);
 }
 
 bool jsnpg_string(generator *g, const byte *bytes, size_t count)
 {
-        ASSERT(can_value(g));
+        assert(can_value(g));
 
         return (!g->callbacks->string) || g->callbacks->string(g->ctx, bytes, count);
 }
 
 bool jsnpg_key(generator *g, const byte *bytes, size_t count)
 {
-        ASSERT(can_key(g));
+        assert(can_key(g));
 
         return (!g->callbacks->key) || g->callbacks->key(g->ctx, bytes, count);
 }
 
 bool jsnpg_start_array(generator *g)
 {
-        ASSERT(can_push(g, STACK_ARRAY));
+        assert(can_push(g, STACK_ARRAY));
 
         return  (!g->callbacks->start_array) ||g->callbacks->start_array(g->ctx);
 }
 
 bool jsnpg_end_array(generator *g)
 {
-        ASSERT(can_pop(g, STACK_ARRAY));
+        assert(can_pop(g, STACK_ARRAY));
 
         return  (!g->callbacks->end_array) ||g->callbacks->end_array(g->ctx);
 }
 
 bool jsnpg_start_object(generator *g)
 {
-        ASSERT(can_push(g, STACK_OBJECT));
+        assert(can_push(g, STACK_OBJECT));
 
         return (!g->callbacks->start_object) ||g->callbacks->start_object(g->ctx);
 }
 
 bool jsnpg_end_object(generator *g)
 {
-        ASSERT(can_pop(g, STACK_OBJECT));
+        assert(can_pop(g, STACK_OBJECT));
 
         return  (!g->callbacks->end_object) ||g->callbacks->end_object(g->ctx);
 }

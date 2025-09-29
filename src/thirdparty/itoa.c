@@ -18,6 +18,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+#include <assert.h>
+
 static inline const char* get_digits_lut() {
     static const char c_digits_lut[200] = {
         '0','0','0','1','0','2','0','3','0','4','0','5','0','6','0','7','0','8','0','9',
@@ -202,7 +204,7 @@ static inline char* u64toa(uint64_t value, char* buffer) {
 }
 
 static inline char* i64toa(int64_t value, char* buffer) {
-    ASSERT(buffer);
+    assert(buffer);
     uint64_t u = (uint64_t)(value);
     if (value < 0) {
         *buffer++ = '-';

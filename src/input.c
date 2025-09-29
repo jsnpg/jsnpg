@@ -5,8 +5,9 @@
  * input.c
  *   an abstraction over the input data
  *   allows modification of JSON strings as escapes are applied
- *   provides validation of utf8 byte sequences
  */
+
+#include <assert.h>
 
 struct memory_input_stream {
         byte *start;
@@ -55,7 +56,7 @@ static inline size_t mis_tell(memory_input_stream *mis)
 
 static inline void mis_adjust(memory_input_stream *mis, byte *ptr)
 {
-        ASSERT(0 <= ptr - mis->start && ptr - mis->start <= (long)mis->count);
+        assert(0 <= ptr - mis->start && ptr - mis->start <= (long)mis->count);
         mis->read = ptr;
 }
 
@@ -69,7 +70,7 @@ static inline const byte *mis_at(memory_input_stream *mis, size_t pos)
 
 static inline bool mis_eof(memory_input_stream *mis)
 {
-        ASSERT(mis_tell(mis) <= mis->count);
+        assert(mis_tell(mis) <= mis->count);
 
         return mis_tell(mis) == mis->count;
 }
@@ -164,16 +165,6 @@ static inline bool mis_consume_next(memory_input_stream *mis, byte b)
         if(!mis_next(mis, b))
                 return false;
         mis->read++;
-        return true;
-}
-
-static inline bool mis_validate_utf8(memory_input_stream *mis)
-{
-        // Terminating \0 will halt utf8 validation if <4 chars
-        int len = utf8_validate_sequence(mis->read, 4);
-        if(len == -1)
-                return false;
-        mis->read += len;
         return true;
 }
 

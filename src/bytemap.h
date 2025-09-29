@@ -1,3 +1,9 @@
+/*
+ * jsnpg - a JSON parser/generator
+ * © 2025 Bob Davison (see also: LICENSE)
+ */
+
+// From ../misc/make_byte_map.c
 
 #define BYTE_WHITESPACE         (1 << 0)
 #define BYTE_LINE_TERMINATOR    (1 << 1)
@@ -21,7 +27,7 @@
 
 #define BYTE_MAP_DIGIT_DECIMAL_POINT 10
 #define BYTE_MAP_DIGIT_EXPONENT      11
-#define BYTE_MAP_DIGIT_MINUS            12
-#define BYTE_MAP_DIGIT_PLUS             13
+#define BYTE_MAP_DIGIT_MINUS         12
+#define BYTE_MAP_DIGIT_PLUS          13
        
 
