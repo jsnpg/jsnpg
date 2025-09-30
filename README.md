@@ -377,9 +377,9 @@ jsnpg_parser_free(parser);
 ```
 
 # Performance
-With the demand for faster JSON parsers research has been made into the performance
-issues and significant improvements have been made, especially in the biggest
-bottleneck, the parsing and formatting of floating point numbers.
+With the demand for faster JSON parsers, research has been made into the performance
+issues.  The biggest bottleneck is parsing and formatting floating point numbers and 
+significant improvements have been made in this area.
 
 Much of the state of the art parsing code is open source and freely available.
 Jsnpg's floating point parsing and formatting has been taken from these projects
@@ -396,6 +396,6 @@ is roughly 2-3 times as fast as the full-precision version of RapidJSON,
 the version that most closely resembles the functionality of `jsnpg`. 
 
 [simdjson](https://github.com/simdjson/simdjson) and [yyjson](https://github.com/ibireme/yyjson)
-both boast performance far superior to RapidJSON but neither support SAX parsing so comparison is
-difficult.
+both boast performance far superior to that of RapidJSON but as neither support
+SAX parsing comparison is difficult.
   
