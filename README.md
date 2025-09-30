@@ -23,7 +23,7 @@ To perform a SAX parse `jsnpg` needs 4 things:
 2. the number of bytes
 3. details of which functions to call for each item in the input
 4. a user provided object that is provided as context to each function call
-:q
+
 
 ```c
 #include <jsnpg/jsnpg.h>
@@ -313,7 +313,7 @@ in the `allow` option of the parser or generator.
 |------------------------------|-----------------------------------------------------|
 | JSNPG_ALLOW_COMMENTS         | Allow C style block and line comments in whitespace |
 | JSNPG_ALLOW_TRAILING_COMMAS  | Allow comma at end of objects and arrays            |
-| JSNPG_ALLOW_TRAILING_CHARS   | Allow any text in input after successful parse      |
+| JSNPG_ALLOW_TRAILING_CHARS   | Allow any text in input after a successful parse      |
 | JSNPG_ALLOW_MULTIPLE_VALUES  | Allow multiple JSON values in input                 | 
 | JSNPG_ALLOW_INVALID_UTF8_IN  | Allow invalid UTF-8 in input                        |
 | JSNPG_ALLOW_INVALID_UTF8_OUT | Allow invalid UTF-8 in output (generator only)      |
@@ -392,10 +392,10 @@ some are Pull parsers, and some provide more than one syle.  The author of Rapid
 [JSON Parser Benchmarking Program](https://github.com/miloyip/nativejson-benchmark)
 which, although no longer updated, was found to be useful in measuring parser
 performance during development.  Results of that testing suggest that `jsnpg` 
-is roughly 2-3 times as fast as the full-precision version of RapidJSON, 
-the version that most closely resembles the functionality of `jsnpg`. 
+is roughly 25% faster at SAX parsing and JSON rendering than the default version
+of RapidJSON. 
 
 [simdjson](https://github.com/simdjson/simdjson) and [yyjson](https://github.com/ibireme/yyjson)
-both boast performance far superior to that of RapidJSON but as neither support
-SAX parsing comparison is difficult.
+both boast performance significantly better than that of RapidJSON but, as neither support
+SAX parsing, comparison is difficult.
   
