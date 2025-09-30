@@ -14,8 +14,6 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#define WRITEABLE_BYTES_PADDING 32
-
 static inline bool parser_in_object(parser *p)
 {
         return stack_peek(&p->stack) == STACK_OBJECT;
@@ -425,7 +423,7 @@ L_DONE:
 
 static byte *copy_bytes(allocator *a, byte *bytes, size_t count)
 {
-        byte *b = allocator_alloc(a, count + WRITEABLE_BYTES_PADDING);
+        byte *b = allocator_alloc(a, count + JSNPG_WRITEABLE_PADDING);
         if(b)
                 memcpy(b, bytes, count);
         return b;
@@ -449,7 +447,7 @@ static parser *parser_set_bytes(parser *p, byte *bytes, size_t count, bool write
                         return NULL;
         }
 
-        memset(b + count, '\0', WRITEABLE_BYTES_PADDING); 
+        memset(b + count, '\0', JSNPG_WRITEABLE_PADDING); 
 
         mis_set_bytes(p->mis, b, count);
 

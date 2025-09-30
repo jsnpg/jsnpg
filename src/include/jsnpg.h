@@ -29,6 +29,9 @@
 // JSON output, and it respects this setting
 #define JSNPG_ALLOW_INVALID_UTF8_OUT            0x20
 
+// The number of additional bytes at the end of the supplied JSON input
+// that are required if the .writeable option is set to true
+#define JSNPG_WRITEABLE_PADDING                 32
 
 typedef enum {
         JSNPG_NONE,
