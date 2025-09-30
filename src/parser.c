@@ -489,9 +489,30 @@ static parser *parser_new(allocator *a, unsigned stack_size, unsigned flags)
         return p;
 }
 
+// External API calls
+// Make sure to check valid arguments
+
+bool jsnpg_parse_streq(parser *p, char *str)
+{
+        if(!p || !str) return false;
+
+        parse_result result = p->result;
+
+        if(result.type != JSNPG_KEY && result.type != JSNPG_STRING)
+                return false;
+
+        const byte *bytes = result.string.bytes;
+        size_t count = result.string.count;
+
+        // if strncmp returns true then str must be at least count bytes long
+        return 0 == strncmp(str, (const char *)bytes, count)
+                        && '\0' == str[count];
+}
+
 void jsnpg_parser_free(parser *p)
 {
-        allocator_free(p->allocator);
+        if(p)
+                allocator_free(p->allocator);
 }
 
 
@@ -532,5 +553,8 @@ parser *jsnpg_parser_new_opt(parser_opts opts)
 
 parse_result jsnpg_parse_result(parser *p)
 {
-        return p->result;
+        if(p)
+                return p->result;
+        else
+                return (parse_result){};
 }

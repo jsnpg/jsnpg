@@ -462,9 +462,13 @@ static generator *json_generator(generator *g, unsigned indent)
         return generator_set_callbacks(g, &print_callbacks, jos);
 }
 
+// Public API
+// Validate arguments
 
 char *jsnpg_result_string(generator *g)
 {
+        if(!g) return NULL;
+
         json_output_stream *jos = g->ctx;
         return jos_put(jos, '\0')
                 ? (char *)jos->mos->buffer
@@ -473,6 +477,8 @@ char *jsnpg_result_string(generator *g)
 
 size_t jsnpg_result_bytes(generator *g, byte **bytes_result)
 {
+        if(!g || !bytes_result || !*bytes_result) return 0;
+
         json_output_stream *jos = g->ctx;
         *bytes_result = jos->mos->buffer;
         return jos->mos->count;

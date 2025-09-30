@@ -280,9 +280,14 @@ static json_type parser_parse_next(parser *p)
         return p->result.type;
 }
 
+// External API
+// Validate arguments
+
 json_type jsnpg_parse_next(parser *p)
 {
-        if(p->mis->start)
+        if(!p)
+                return JSNPG_NONE;
+        else if(p->mis->start)
                 return parser_parse_next(p);
         else
                 return dom_parse_next(p);

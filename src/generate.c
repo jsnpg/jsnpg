@@ -101,8 +101,13 @@ static bool can_pop(generator *g, int type)
 }
 #endif  // ifndef NDEBUG
 
+// Public API
+// Validate arguments
+
 bool jsnpg_null(generator *g)
 {
+        if(!g) return false;
+
         assert(can_value(g));
 
         return (!g->callbacks->null) || g->callbacks->null(g->ctx);
@@ -110,6 +115,8 @@ bool jsnpg_null(generator *g)
 
 bool jsnpg_boolean(generator *g, bool is_true)
 {
+        if(!g) return false;
+
         assert(can_value(g));
 
         return  (!g->callbacks->boolean) || g->callbacks->boolean(g->ctx, is_true);
@@ -117,6 +124,8 @@ bool jsnpg_boolean(generator *g, bool is_true)
 
 bool jsnpg_integer(generator *g, long integer)
 {
+        if(!g) return false;
+
         assert(can_value(g));
 
         return  (!g->callbacks->integer) || g->callbacks->integer(g->ctx, integer);
@@ -124,6 +133,8 @@ bool jsnpg_integer(generator *g, long integer)
 
 bool jsnpg_real(generator *g, double real)
 {
+        if(!g) return false;
+
         assert(can_value(g));
 
         return  (!g->callbacks->real) || g->callbacks->real(g->ctx, real);
@@ -131,6 +142,8 @@ bool jsnpg_real(generator *g, double real)
 
 bool jsnpg_string(generator *g, const byte *bytes, size_t count)
 {
+        if(!g || !bytes || !*bytes) return false;
+
         assert(can_value(g));
 
         return (!g->callbacks->string) || g->callbacks->string(g->ctx, bytes, count);
@@ -138,6 +151,8 @@ bool jsnpg_string(generator *g, const byte *bytes, size_t count)
 
 bool jsnpg_key(generator *g, const byte *bytes, size_t count)
 {
+        if(!g || !bytes || !*bytes) return false;
+
         assert(can_key(g));
 
         return (!g->callbacks->key) || g->callbacks->key(g->ctx, bytes, count);
@@ -145,6 +160,8 @@ bool jsnpg_key(generator *g, const byte *bytes, size_t count)
 
 bool jsnpg_start_array(generator *g)
 {
+        if(!g) return false;
+
         assert(can_push(g, STACK_ARRAY));
 
         return  (!g->callbacks->start_array) ||g->callbacks->start_array(g->ctx);
@@ -152,6 +169,8 @@ bool jsnpg_start_array(generator *g)
 
 bool jsnpg_end_array(generator *g)
 {
+        if(!g) return false;
+
         assert(can_pop(g, STACK_ARRAY));
 
         return  (!g->callbacks->end_array) ||g->callbacks->end_array(g->ctx);
@@ -159,6 +178,8 @@ bool jsnpg_end_array(generator *g)
 
 bool jsnpg_start_object(generator *g)
 {
+        if(!g) return false;
+
         assert(can_push(g, STACK_OBJECT));
 
         return (!g->callbacks->start_object) ||g->callbacks->start_object(g->ctx);
@@ -166,6 +187,8 @@ bool jsnpg_start_object(generator *g)
 
 bool jsnpg_end_object(generator *g)
 {
+        if(!g) return false;
+
         assert(can_pop(g, STACK_OBJECT));
 
         return  (!g->callbacks->end_object) ||g->callbacks->end_object(g->ctx);
@@ -214,6 +237,9 @@ static generator *generator_set_callbacks(
         return g;
 }
 
+// External API
+// Validate arguments
+
 void jsnpg_generator_free(generator *g)
 {
         if(!g)
@@ -246,5 +272,8 @@ generator *jsnpg_generator_new_opt(generator_opts opts)
 
 error_info jsnpg_result_error(generator *g)
 {
-        return g->error;
+        if(g)
+                return g->error;
+        else
+                return (error_info){};
 }

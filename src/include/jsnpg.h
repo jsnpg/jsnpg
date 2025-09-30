@@ -156,6 +156,10 @@ jsnpg_parser *jsnpg_parser_new_opt(jsnpg_parser_opts);
 jsnpg_type jsnpg_parse_next(jsnpg_parser *);
 jsnpg_result jsnpg_parse_result(jsnpg_parser *);
 
+// A utility to compare a parse result string to a C string
+// Returns true on exact match
+bool jsnpg_parse_streq(jsnpg_parser *, char *);
+
 // Example, pull parsing from string that has trailing commas in it
 //
 // p = jsnpg_parser_new( .allow = JSNPG_ALLOW_TRAILING_COMMAS      

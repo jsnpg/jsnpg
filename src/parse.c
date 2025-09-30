@@ -221,6 +221,9 @@ static parse_result parse(parser *p, generator *g)
         return val;
 }
 
+// External API
+// Validate arguments
+
 parse_result jsnpg_parse_opt(parse_opts opts)
 {
         generator *g;
