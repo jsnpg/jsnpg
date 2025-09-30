@@ -7,14 +7,23 @@ or a Pull / Iterative interface.
 What is considered "standard" JSON, and which variants `jsnpg` supports, is 
 discussed in [JSON Variants](#json-variants).
 
-## SAX Parsing
+## Content
+
+* [SAX Parsing](#sax-parsing)
+* [Generating JSON](#generating-json)
+* [Optional Macros](#optional-macros)
+* [JSON Variants](#json-variants)
+* [Pull Parsing](#pull-parsing)
+* [Performance](#performance)
+
+# SAX Parsing
 
 To perform a SAX parse `jsnpg` needs 4 things:
 1. the bytes that make up the JSON to be parsed
 2. the number of bytes
-3. details of which functions to call for each item in the JSON
+3. details of which functions to call for each item in the input
 4. a user provided object that is provided as context to each function call
-
+:q
 
 ```c
 #include <jsnpg/jsnpg.h>
@@ -69,7 +78,7 @@ jsnpg_result result = jsnpg_parse(.bytes = json_data,
 
 ```
 
-## Generating JSON
+# Generating JSON
 The example below illustrates how to generate the following JSON
 as a string with no whitespace.  Pretty printing can be enabled
 by providing a non-zero indent.
@@ -183,7 +192,7 @@ object(
     keyval("length", integer(123)),
     keyval("width", real(34.65)),
     keyval("name", string("Type 3")),
-    keyval("spec", array(boolean(true), boolean(false), null())
+    keyval("spec", array(boolean(true), boolean(false), null()))
 );
 
 #include <jsnpg/undef_gen_macros.h>
@@ -240,9 +249,9 @@ The dom option allows the parser to replay a previous parse that has been
 stored in memory.  [Generator Options](#generator-options) shows how to
 generate a dom object.
 
-Th dom option was provided as the JSON benchmark that was used for performance
-analysis required that a parse to and from a DOM could be performed. Jsnpg does
-not provide facilities to query the in memory representation.
+The dom option was provided for the JSON benchmark that was used for performance
+analysis as it required support for DOM parsing.  Jsnpg does not provide 
+facilities to query the in memory representation.
 
 ## .callbacks (jsnpg_callbacks *)
 The SAX callback functions that the parser should call.
@@ -258,7 +267,7 @@ Rather than providing callbacks and context a generator created with
 This section describes the options available when craeting generators with
 `jsnpg_generator_new`.
 
-If no options are specified to indicate what to generate, a JSON output
+If no options are specified to indicate what to generate, a JSON string 
 generator will be created.
 
 Generator output can be retrived from `jsnpg_result_string`, `jsnpg_result_bytes` or
@@ -267,8 +276,7 @@ Generator output can be retrived from `jsnpg_result_string`, `jsnpg_result_bytes
 ## .allow (unsigned)
 Enables one or more of the provided [JSON Variants](#json-variants).
 
-`JSNPG_ALLOW_INVALID_UTF8_OUT` is the only setting that applies to generators,
-and that is for disabling UTF-8 validation when generating JSON.
+`JSNPG_ALLOW_INVALID_UTF8_OUT` is the only setting that applies to generators.
 
 ## .indent (unsigned)
 The number of spaces to indent each level of output when generating
@@ -293,12 +301,12 @@ JSON input.  This object can be retrieved via `json_result_dom`.
 By default `jsnpg` conforms to the JSON standard, with the following implementation details:
 
 * Input must be valid UTF-8
-* Numbers are treated as 64 bit int if they have no decimal point or exponent indicator and can be stored in a uint64_t without loss of information
+* Numbers are treated as 64 bit int if they have no decimal point or exponent indicator and can be stored in a `long` without loss of information
 * All other numbers are treated as double.
 * Numbers larger than can be stored in a double will be rejected, and the parse will fail.
 * Numbers smaller than can be stored in a double will be converted to 0.0 or -0.0
 
-Standard behaviour can be relaxed by passing a bit wise OR of the following boolean masks
+Standard behaviour can be relaxed by passing a bitwise OR of the following boolean masks
 in the `allow` option of the parser or generator.
 
 |           *Mask*             |                     *Description*                   |
@@ -315,11 +323,11 @@ Pull parsing acts like an iterator over the JSON input, returning one item at a 
 Although slightly slower than SAX parsing it is possible to follow the structure of the
 input while parsing rather than relying on the conetxt passed from callback to callback.
 
-After creating a parser with `jsnpg_parser_new` each call to `jsnpg_parse_next`
-returns a `jsnpg_type`, an enum in `jsnpg.h` that says what type of JSON data
-has been parsed.  The type will be `JSNPG_EOF` at the end of the parse and 
-`JSNPG_ERROR` on error.  Detail of what was parsed can be retrieved from
-`jsnpg_parse_result`.
+Create a parser with `jsnpg_parser_new` and call `jsnpg_parse_next` to parse
+each item in the input.  The return value from `jsnpg_parse_next` can be tested 
+against the values of the `jsnpg_type` enum (see `jsnpg.h`).  
+Any values that have been parsed, such as strings and numbers, can be
+be retrieved from `jsnpg_parse_result`.
 
 ## Parser Options
 Options for creating a pull parser are identical to [Parse Options](#parse-options)
@@ -332,7 +340,7 @@ C string so a utility function `jsnpg_parse_streq` is provided that returns `tru
 the last parse result matches the given C string.
 
 The following example extracts the integer value from the supplied JSON where
-the key is `key-2`.  Error checks are omitted for clarity.
+the key is `key-2`.  Error checks are omitted for brevity.
 
 ```json
 {
@@ -368,16 +376,26 @@ if(JSNPG_START_OBJECT == jsnpg_parse_next(parser)) {
 jsnpg_parser_free(parser);
 ```
 
+# Performance
+With the demand for faster JSON parsers research has been made into the performance
+issues and significant improvements have been made, especially in the biggest
+bottleneck, the parsing and formatting of floating point numbers.
 
+Much of the state of the art parsing code is open source and freely available.
+Jsnpg's floating point parsing and formatting has been taken from these projects
+and modified from C++ to C.  Author copyright and license details can be
+found in the [LICENSE](https://github.com/jsnpg/jsnpg/blob/master/LICENSE). 
 
-        
+Measuring performance of different JSON parsers is not straightforward as not
+all JSON parsers produce the same results, some are DOM parsers, some SAX and
+some are Pull parsers, and some provide more than one syle.  The author of RapidJSON produced a 
+[JSON Parser Benchmarking Program](https://github.com/miloyip/nativejson-benchmark)
+which, although no longer updated, was found to be useful in measuring parser
+performance during development.  Results of that testing suggest that `jsnpg` 
+is roughly 2-3 times as fast as the full-precision version of RapidJSON, 
+the version that most closely resembles the functionality of `jsnpg`. 
 
-
-
-
-
-
-
-
-
-
+[simdjson](https://github.com/simdjson/simdjson) and [yyjson](https://github.com/ibireme/yyjson)
+both boast performance far superior to RapidJSON but neither support SAX parsing so comparison is
+difficult.
+  
