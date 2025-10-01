@@ -14,12 +14,16 @@ set_target_properties(jsnpg PROPERTIES
 
 configure_file(jsnpg.pc.in jsnpg.pc @ONLY)
 
-set(PUB_HDRS, include/def_gen_macros.h include/undef_gen_macros.h)
 
 install(TARGETS jsnpg jsnpg_static
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/jsnpg)
-install(FILES ${PUB_HDRS}
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/def_gen_macros.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/jsnpg)
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/undef_gen_macros.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/jsnpg)
+
 install(FILES ${CMAKE_BINARY_DIR}/src/jsnpg.pc
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
