@@ -14,7 +14,13 @@ failed="\e[1;31m"
 reset="\e[0m"
 
 declare -a bar_chars
-bar_chars=("\u2588" "\u2589" "\u258A" "\u258B" "\u258C" "\u258D" "\u258E" "\u258F")
+if [ -f /.dockerenv ]; then
+        bar_chars=("#")
+else    
+        bar_chars=("\u2589" "\u258A" "\u258B" "\u258C" "\u258D" "\u258E" "\u258F")
+fi
+bar_char_count=${#bar_chars}
+
 complete=0
 
 render_progress() {
@@ -27,20 +33,20 @@ render_progress() {
         local length=$((COLUMNS - $suffix_max - 1))
 
 
-        local total_bar=$(($length * 7 * $current / $len))
-        local comp_bar=$(($length * 7 * $complete / $len))
-        local total_full=$(($total_bar / 7))
-        local comp_full=$((comp_bar / 7))
-        local rem=$(($total_bar % 7))
+        local total_bar=$(($length * ${bar_char_count} * $current / $len))
+        local comp_bar=$(($length * ${bar_char_count} * $complete / $len))
+        local total_full=$(($total_bar / ${bar_char_count}))
+        local comp_full=$((comp_bar / ${bar_char_count}))
+        local rem=$(($total_bar % ${bar_char_count}))
         local s=$colour
         local i
 
         for ((i = $comp_full ; i < $total_full ; i++))
         do
-               s+=${bar_chars[1]}
+               s+=${bar_chars[0]}
         done
         if [ $rem -gt 0 ]; then
-                s+=${bar_chars[8 - $rem]}
+                s+=${bar_chars[$bar_char_count - $rem]}
         else
                 s+=' '
         fi
