@@ -37,8 +37,7 @@ typedef enum {
         JSNPG_NONE,
         JSNPG_PULL,
         JSNPG_NULL,
-        JSNPG_FALSE,
-        JSNPG_TRUE,
+        JSNPG_BOOLEAN,
         JSNPG_INTEGER,
         JSNPG_REAL,
         JSNPG_STRING,
@@ -76,11 +75,6 @@ typedef struct {
         size_t count;
 } jsnpg_string_info;
 
-typedef union {
-        long integer;
-        double real;
-} jsnpg_number_info;
-
 typedef struct {
         jsnpg_error_code code;
         const char *text;
@@ -90,14 +84,16 @@ typedef struct {
         jsnpg_type type;
         size_t position;
         union {
-                jsnpg_number_info number;
+                bool boolean;
+                long integer;
+                double real;
                 jsnpg_string_info string;
                 jsnpg_error_info error;
         };
 } jsnpg_result;
 
 typedef struct {
-        bool (*boolean)(void *ctx, bool is_true);
+        bool (*boolean)(void *ctx, bool boolean);
         bool (*null)(void *ctx);
         bool (*integer)(void *ctx, long integer);
         bool (*real)(void *ctx, double real);
@@ -114,10 +110,19 @@ typedef struct jsnpg_generator         jsnpg_generator;
 typedef struct jsnpg_dom               jsnpg_dom;
 
 
+// Set functions that jspng should use for memory allocation/reallocation
+// and freeing. If not called defaults to malloc, realloc and free.
+// This function has race conditions with all other jsnpg_ functions
+// so should be called before any other jsnpg_ function.
 void jsnpg_set_allocators(
                 void *(*malloc)(size_t), 
                 void *(*realloc)(void *, size_t),
                 void (*free)(void *));
+
+
+// ------------------------------------
+// Pull Parsing
+// ------------------------------------
 
 typedef struct {
         // required to track array/object nesting
@@ -134,15 +139,11 @@ typedef struct {
         // created by jsnpg_generator_new(.dom = true, ...)
         unsigned char *bytes;           // input bytes, must set count
         size_t count;
-        bool writeable;                 // if true bytes is writeable and padded with 8 extra bytes
+        bool writeable;                 // if true bytes is writeable and padded with extra bytes
         char *string;                   // NULL terminated C string
         jsnpg_dom *dom;
 
 } jsnpg_parser_opts;
-
-// ------------------------------------
-// Pull Parsing
-// ------------------------------------
 
 // Create a parser for pull parsing
 // Not needed for callback / generator parsing as jsnpg_parse
@@ -156,13 +157,13 @@ jsnpg_parser *jsnpg_parser_new_opt(jsnpg_parser_opts);
 jsnpg_type jsnpg_parse_next(jsnpg_parser *);
 jsnpg_result jsnpg_parse_result(jsnpg_parser *);
 
-// A utility to compare a parse result string to a C string
+// A utility to compare a parse result to a C string
 // Returns true on exact match
 bool jsnpg_parse_streq(jsnpg_parser *, char *);
 
 // Example, pull parsing from string that has trailing commas in it
 //
-// p = jsnpg_parser_new( .allow = JSNPG_ALLOW_TRAILING_COMMAS      
+// p = jsnpg_parser_new( .allow = JSNPG_ALLOW_TRAILING_COMMAS,      
 //                       .string = "{\"k1\": [12.5, true,],}");
 // 
 // The comments below indicate what JSON items are parsed
@@ -185,6 +186,7 @@ bool jsnpg_parse_streq(jsnpg_parser *, char *);
 
 // Free the parser returned from jsnpg_parser_new
 void jsnpg_parser_free(jsnpg_parser *);
+
 
 // ------------------------------------
 // Callback and Generator Parsing
@@ -221,11 +223,11 @@ jsnpg_result jsnpg_parse_opt(jsnpg_parse_opts);
 // Example, parse a byte buffer and call callbacks with context
 //          allow comments and multiple values in input
 //
-// jsnpg_parse( .allow = JSNPG_ALLOW_MULTIPLE_VALUES | JSNPG_ALLOW_COMMENTS
-//               .bytes = my_bytes, 
-//               .count = my_byte_count, 
-//               .callbacks = my_callbacks,
-//               .ctx = my_context);
+// jsnpg_parse( .allow = JSNPG_ALLOW_MULTIPLE_VALUES | JSNPG_ALLOW_COMMENTS,
+//              .bytes = my_bytes, 
+//              .count = my_byte_count, 
+//              .callbacks = my_callbacks,
+//              .ctx = my_context);
 
 
 // ------------------------------------

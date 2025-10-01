@@ -47,11 +47,10 @@ static inline parse_state state_change_end(parser *p)
         return STATE_DONE;
 }
 
-static inline json_type accept_boolean(parser *p, bool is_true)
+static inline json_type accept_boolean(parser *p, bool boolean)
 {
         p->state = state_change_value(p->state);
-        p->result = make_parse_result(p,
-                         is_true ? JSNPG_TRUE : JSNPG_FALSE);
+        p->result = make_parse_result(p, JSNPG_BOOLEAN, boolean);
         return p->result.type;
 }
 

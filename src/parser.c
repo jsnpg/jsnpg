@@ -44,11 +44,14 @@ static parse_result make_parse_result(parser *p, json_type type, ...)
                 result.string.bytes = va_arg(ap, byte *);
                 result.string.count = va_arg(ap, size_t);
                 break;
+        case JSNPG_BOOLEAN:
+                result.boolean = va_arg(ap, int); // ... promotes bool to int
+                break;
         case JSNPG_REAL:
-                result.number.real = va_arg(ap, double);
+                result.real = va_arg(ap, double);
                 break;
         case JSNPG_INTEGER:
-                result.number.integer = va_arg(ap, long);
+                result.integer = va_arg(ap, long);
                 break;
         case JSNPG_ERROR:
                 result.error.code = va_arg(ap, error_code);

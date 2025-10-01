@@ -360,12 +360,12 @@ static inline bool print_null(void *ctx)
                 && jos_puts(jos, (const byte *)"null", 4);
 }
 
-static inline bool print_boolean(void *ctx, bool is_true)
+static inline bool print_boolean(void *ctx, bool boolean)
 {
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
-                        && (is_true
+                        && (boolean
                                 ? jos_puts(jos, (const byte *)"true", 4)
                                 : jos_puts(jos, (const byte *)"false", 5));
 }

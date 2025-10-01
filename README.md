@@ -14,7 +14,9 @@ discussed in [JSON Variants](#json-variants).
 * [Optional Macros](#optional-macros)
 * [JSON Variants](#json-variants)
 * [Pull Parsing](#pull-parsing)
+* [Testing] (#testing)G
 * [Performance](#performance)
+* [Availability](#vailability)
 
 # SAX Parsing
 
@@ -375,6 +377,18 @@ if(JSNPG_START_OBJECT == jsnpg_parse_next(parser)) {
 
 jsnpg_parser_free(parser);
 ```
+# Testing
+Thanks to the [JSONTestSuite](https://github.com/nst/JSONTestSuite) and
+[JSON Parser Benchmark](https://github.com/miloyip/nativejson-benchmark)
+there were many test JSON files available to provide good test coverage.
+These files were supplemented by tests for particular edge cases that we
+were aware of.  There are currently 420 test files used by `make test`. 
+
+Each test file is tested for parsing via SAX, the pull-parser, and from the DOM.
+Each of these cases is tested for writing to the DOM and producing both stringified 
+and pretty printed JSON. There are curently 4200 individual tests performed
+by `make test`.  Fortunately most files are very small and running the tests only
+takes 10 seconds.
 
 # Performance
 With the demand for faster JSON parsers, research has been made into the performance
@@ -388,14 +402,19 @@ found in the [LICENSE](https://github.com/jsnpg/jsnpg/blob/master/LICENSE).
 
 Measuring performance of different JSON parsers is not straightforward as not
 all JSON parsers produce the same results, some are DOM parsers, some SAX and
-some are Pull parsers, and some provide more than one syle.  The author of RapidJSON produced a 
-[JSON Parser Benchmarking Program](https://github.com/miloyip/nativejson-benchmark)
+some are Pull parsers, and some provide more than one syle.  The author of RapidJSON 
+produced a [JSON Parser Benchmark](https://github.com/miloyip/nativejson-benchmark)
 which, although no longer updated, was found to be useful in measuring parser
 performance during development.  Results of that testing suggest that `jsnpg` 
-is roughly 25% faster at SAX parsing and JSON rendering than the default version
-of RapidJSON. 
+is roughly 40% faster at SAX parsing and JSON rendering than the default version
+of RapidJSON.
 
 [simdjson](https://github.com/simdjson/simdjson) and [yyjson](https://github.com/ibireme/yyjson)
 both boast performance significantly better than that of RapidJSON but, as neither support
 SAX parsing, comparison is difficult.
+
+# Availability
+Jsnpg is currently only supported on x86-64 Linux compiled with GCC.
+
+Increasing the supported platforms and compilers will depend upon demand.
   

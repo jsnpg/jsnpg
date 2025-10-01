@@ -133,9 +133,8 @@ static void run_parse_next(jsnpg_parser *p, jsnpg_generator *g)
         while(!(abort || JSNPG_EOF == jsnpg_parse_next(p))) {
                 res = jsnpg_parse_result(p);
                 switch(res.type) {
-                case JSNPG_TRUE:
-                case JSNPG_FALSE:
-                        abort = !jsnpg_boolean(g, res.type == JSNPG_TRUE);
+                case JSNPG_BOOLEAN:
+                        abort = !jsnpg_boolean(g, res.boolean);
                         break;
                 case JSNPG_NULL:
                         abort = !jsnpg_null(g);
@@ -147,10 +146,10 @@ static void run_parse_next(jsnpg_parser *p, jsnpg_generator *g)
                         abort = !jsnpg_key(g, res.string.bytes, res.string.count);
                         break;
                 case JSNPG_INTEGER:
-                        abort = !jsnpg_integer(g, res.number.integer);
+                        abort = !jsnpg_integer(g, res.integer);
                         break;
                 case JSNPG_REAL:
-                        abort = !jsnpg_real(g, res.number.real);
+                        abort = !jsnpg_real(g, res.real);
                         break;
                 case JSNPG_START_ARRAY:
                         abort = !jsnpg_start_array(g);

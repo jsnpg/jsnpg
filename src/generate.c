@@ -25,7 +25,7 @@ typedef bool (*end_object)(void *);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static bool void_boolean(void *ctx, bool is_true) { return true; }
+static bool void_boolean(void *ctx, bool boolean) { return true; }
 static bool void_null(void *ctx) { return true; }
 static bool void_integer(void *ctx, long integer) { return true; }
 static bool void_real(void *ctx, double real) { return true; }
@@ -113,13 +113,13 @@ bool jsnpg_null(generator *g)
         return (!g->callbacks->null) || g->callbacks->null(g->ctx);
 }
 
-bool jsnpg_boolean(generator *g, bool is_true)
+bool jsnpg_boolean(generator *g, bool boolean)
 {
         if(!g) return false;
 
         assert(can_value(g));
 
-        return  (!g->callbacks->boolean) || g->callbacks->boolean(g->ctx, is_true);
+        return  (!g->callbacks->boolean) || g->callbacks->boolean(g->ctx, boolean);
 }
 
 bool jsnpg_integer(generator *g, long integer)
@@ -142,7 +142,7 @@ bool jsnpg_real(generator *g, double real)
 
 bool jsnpg_string(generator *g, const byte *bytes, size_t count)
 {
-        if(!g || !bytes || !*bytes) return false;
+        if(!g || !bytes) return false;
 
         assert(can_value(g));
 
@@ -151,7 +151,7 @@ bool jsnpg_string(generator *g, const byte *bytes, size_t count)
 
 bool jsnpg_key(generator *g, const byte *bytes, size_t count)
 {
-        if(!g || !bytes || !*bytes) return false;
+        if(!g || !bytes) return false;
 
         assert(can_key(g));
 

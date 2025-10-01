@@ -33,6 +33,7 @@ typedef struct dom_node dom_node;
 struct dom_node {
         union {
                 json_type type;
+                bool boolean;
                 double real;
                 long integer;
                 size_t count;
@@ -110,6 +111,18 @@ static dom_node *dom_add_type(dom *root, json_type type, int extra)
         return node;
 }
 
+static inline dom_node *dom_add_boolean(dom *root, bool boolean)
+{
+        dom_node *node = dom_add_type(root, JSNPG_BOOLEAN, 1);
+        if(!node)
+                return NULL;
+
+        node++;
+        node->is.boolean = boolean;
+
+        return node;
+}
+
 static inline dom_node *dom_add_integer(dom *root, long integer)
 {
         dom_node *node = dom_add_type(root, JSNPG_INTEGER, 1);
@@ -148,10 +161,10 @@ static inline dom_node *dom_add_bytes(dom *root, json_type type, const byte *byt
         return node;
 }
 
-static inline bool dom_boolean(void *ctx, bool is_true)
+static inline bool dom_boolean(void *ctx, bool boolean)
 {
         dom *root = ctx;
-        return dom_add_type(root, is_true ? JSNPG_TRUE : JSNPG_FALSE, 0);
+        return dom_add_boolean(root, boolean);
 }
 
 static inline bool dom_null(void *ctx)
@@ -265,15 +278,20 @@ static json_type dom_parse_next(parser *p)
         offset += NODE_SIZE;
         json_type type = node->is.type;
         switch(type) {
+        case JSNPG_BOOLEAN:
+                node++;
+                offset += NODE_SIZE;
+                p->result.boolean = node->is.boolean;
+                break;
         case JSNPG_INTEGER:
                 node++;
                 offset += NODE_SIZE;
-                p->result.number.integer = node->is.integer;
+                p->result.integer = node->is.integer;
                 break;
         case JSNPG_REAL:
                 node++;
                 offset += NODE_SIZE;
-                p->result.number.real = node->is.real;
+                p->result.real = node->is.real;
                 break;
         case JSNPG_STRING:
         case JSNPG_KEY:
@@ -337,9 +355,10 @@ static parse_result dom_parse(parser *p, generator *g)
                         ok = gen_key(gen_ctx, node->is.bytes, count);
                         break;
 
-                case JSNPG_TRUE:
-                case JSNPG_FALSE:
-                        ok = gen_boolean(gen_ctx, type == JSNPG_TRUE);
+                case JSNPG_BOOLEAN:
+                        node++;
+                        offset += NODE_SIZE;
+                        ok = gen_boolean(gen_ctx, node->is.boolean);
                         break;
 
                 case JSNPG_NULL:
