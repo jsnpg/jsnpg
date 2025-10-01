@@ -367,7 +367,7 @@ if(JSNPG_START_OBJECT == jsnpg_parse_next(parser)) {
     while(JSNPG_KEY == jsnpg_parse_next(parser)) {
         if(jsnpg_parse_streq(parser, "key-2")) { 
             if(JSNPG_INTEGER == jsnpg_parse_next(parser)) {
-                key2_value = jsnpg_parse_result(parser).number.integer;
+                key2_value = jsnpg_parse_result(parser).integer;
             }
         } else {
             jsnpg_parse_next(parser); // not our key, discard value
