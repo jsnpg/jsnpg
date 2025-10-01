@@ -378,7 +378,7 @@ if(JSNPG_START_OBJECT == jsnpg_parse_next(parser)) {
 jsnpg_parser_free(parser);
 ```
 # Testing
-Thanks to the [JSONTestSuite](https://github.com/nst/JSONTestSuite) and
+Thanks to [JSONTestSuite](https://github.com/nst/JSONTestSuite) and
 [JSON Parser Benchmark](https://github.com/miloyip/nativejson-benchmark)
 there were many test JSON files available to provide good test coverage.
 These files were supplemented by tests for particular edge cases that we
