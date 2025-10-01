@@ -14,7 +14,7 @@ discussed in [JSON Variants](#json-variants).
 * [Optional Macros](#optional-macros)
 * [JSON Variants](#json-variants)
 * [Pull Parsing](#pull-parsing)
-* [Testing] (#testing)
+* [Testing](#testing)
 * [Performance](#performance)
 * [Availability](#vailability)
 
