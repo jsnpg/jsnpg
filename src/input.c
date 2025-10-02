@@ -9,10 +9,20 @@
 
 #include <assert.h>
 
+// read keeps track of read position
+// and start is always the start
+//
+// string/mark/write are used when re-writing the input stream
+//
+// count is the number of bytes in the JSON input
+//
+// allow_comments is true if C style block and line comments
+// are permitted in whitespace
+
 struct memory_input_stream {
         byte *start;
-        byte *string;
         byte *read;
+        byte *string;
         byte *write;
         byte *mark;
         size_t count;
@@ -167,6 +177,57 @@ static inline bool mis_consume_next(memory_input_stream *mis, byte b)
         mis->read++;
         return true;
 }
+
+// Processing JSON strings and the escapes that they may contain
+//
+// when an escape is encountered: mis_string_update
+//
+//                      [ "a string \u0040 with escape" ]
+// read                             ^
+// write                            ^
+// string                  ^
+// mark                    ^
+//
+// when the escape is parsed: parse_escape
+//
+//                      [ "a string \u0040 with escape" ]
+// read                                   ^
+// write                            ^
+// string                  ^
+// mark                    ^
+//
+// when the escape has been re-written: utf8_encode => mis_writer
+//
+//                      [ "a string @u0040 with escape" ]
+// read                                   ^
+// write                             ^
+// string                  ^
+// mark                    ^
+//
+// when string parsing resumes: mis_string_restart
+//
+//                      [ "a string @u0040 with escape" ]
+// read                                   ^
+// write                             ^
+// string                 ^
+// mark                                   ^
+//
+// at the end of string, before completion:
+//
+//                      [ "a string @u0040 with escape" ]
+// read                                              ^
+// write                             ^
+// string                 ^
+// mark                                   ^
+//
+// at end of string, after completion: mis_string_complete
+//                      [ "a string @ with escapecape" ]
+// read                                               ^
+// write                                         ^
+// string                 ^
+// mark                                   ^
+//
+// Length of string will be taken from string to write, trailing 'cape' will be ignored
 
 static inline void mis_string_start(memory_input_stream *mis)
 {

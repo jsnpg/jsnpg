@@ -6,8 +6,6 @@
  *   create error information for parser/generator
  */
 
-#include <stdio.h>
-
 static const char *error_msgs[] = {
         [JSNPG_ERROR_OPT]               = "Invalid option",
         [JSNPG_ERROR_ALLOC]             = "Out of memory",
@@ -55,6 +53,8 @@ static parse_result make_error_return(error_code code, size_t at)
         };
 }
 
+// A parse error may have originated from a generator error
+// If so, report the generator error
 static parse_result make_pg_error_return(parser *p, generator *g)
 {
         parse_result r = p->result;

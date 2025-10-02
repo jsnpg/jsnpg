@@ -14,11 +14,16 @@
 /*
  * Most JSON items just require one dom_node to store the type
  *
+ * Booleans require an extra node to store true/false (this could be
+ * stored in the high byte of the type, saving 64bits, at the cost of
+ * additional complexity)
+ *
  * Numbers require an extra node to store the long or double value
  *
  * Strings and keys need two extra nodes, one for the byte count in the string
- * and one for a pointer to the string
- *
+ * and one for a pointer to the string. (They could be stored together if we used
+ * unsigned count and offset and limited ourselves to 4GB JSON, not unreasonable)
+*
  * The actual string bytes are held by the allocator that holds the dom nodes
  * so they will be deallocated together.
  */
@@ -41,6 +46,8 @@ struct dom_node {
         } is;
 };
 
+// Dom Info is stored by parser when pull-parsing
+// to maintain its position in the parse
 static dom_info dom_parser_info(dom *root)
 {
         dom_info di;
@@ -246,11 +253,6 @@ static dom *dom_new(allocator *a, size_t size)
         return root;
 }
 
-dom *jsnpg_result_dom(generator *g)
-{
-        return g->ctx;
-}
-
 static generator *dom_generator(generator *g)
 {
         dom *root = dom_new(g->allocator, 0);
@@ -260,6 +262,7 @@ static generator *dom_generator(generator *g)
         return generator_set_callbacks(g, &dom_callbacks, root);
 }
 
+// Pull Parse from DOM
 static json_type dom_parse_next(parser *p)
 {
         dom *hdr = p->dom_info.hdr;
@@ -311,18 +314,12 @@ static json_type dom_parse_next(parser *p)
         return type;
 }
 
+// SAX parse from DOM
 static parse_result dom_parse(parser *p, generator *g)
 {
-        const boolean gen_boolean           = g->callbacks->boolean      ? g->callbacks->boolean      : void_boolean;
-        const null gen_null                 = g->callbacks->null         ? g->callbacks->null         : void_null;
-        const integer gen_integer           = g->callbacks->integer      ? g->callbacks->integer      : void_integer;
-        const real gen_real                 = g->callbacks->real         ? g->callbacks->real         : void_real;
-        const string gen_string             = g->callbacks->string       ? g->callbacks->string       : void_string;
-        const key gen_key                   = g->callbacks->key          ? g->callbacks->key          : void_key;
-        const start_array gen_start_array   = g->callbacks->start_array  ? g->callbacks->start_array  : void_start_array;
-        const end_array gen_end_array       = g->callbacks->end_array    ? g->callbacks->end_array    : void_end_array;
-        const start_object gen_start_object = g->callbacks->start_object ? g->callbacks->start_object : void_start_object;
-        const end_object gen_end_object     = g->callbacks->end_object   ? g->callbacks->end_object   : void_end_object;
+        // const boolean gen_boolean = g->callbacks->boolean ? g->callbacks->boolean : void_boolean;
+        // for all callbacks
+        DECLARE_CALLBACKS(g, gen_);
 
         void *gen_ctx = g->ctx;
 
@@ -409,3 +406,12 @@ static parse_result dom_parse(parser *p, generator *g)
         return (parse_result) { .type = JSNPG_EOF };
 
 }
+
+// Public API
+// Validate arguments
+
+dom *jsnpg_result_dom(generator *g)
+{
+        return g ? g->ctx : NULL;
+}
+

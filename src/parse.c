@@ -33,22 +33,15 @@
  *   and comma separator.  
  *   Need to handle multiple endings such as '... }]], ...'
  * 
- * - Once we have parsed a JSON value we have either finished, if at the
- *   top level, or we need to go round again
+ * - Once we have parsed a JSON value we have finished (if at the
+ *   top level), or we need to go round again
  */
 
 static void parse_generate(parser *p, generator *g)
 {
-        const boolean gen_boolean           = g->callbacks->boolean      ? g->callbacks->boolean      : void_boolean;
-        const null gen_null                 = g->callbacks->null         ? g->callbacks->null         : void_null;
-        const integer gen_integer           = g->callbacks->integer      ? g->callbacks->integer      : void_integer;
-        const real gen_real                 = g->callbacks->real         ? g->callbacks->real         : void_real;
-        const string gen_string             = g->callbacks->string       ? g->callbacks->string       : void_string;
-        const key gen_key                   = g->callbacks->key          ? g->callbacks->key          : void_key;
-        const start_array gen_start_array   = g->callbacks->start_array  ? g->callbacks->start_array  : void_start_array;
-        const end_array gen_end_array       = g->callbacks->end_array    ? g->callbacks->end_array    : void_end_array;
-        const start_object gen_start_object = g->callbacks->start_object ? g->callbacks->start_object : void_start_object;
-        const end_object gen_end_object     = g->callbacks->end_object   ? g->callbacks->end_object   : void_end_object;
+        // const boolean gen_boolean = g->callbacks->boolean ? g->callbacks->boolean : void_boolean;
+        // for all callbacks
+        DECLARE_CALLBACKS(g, gen_);
 
         void *gen_ctx = g->ctx;
         
@@ -226,9 +219,14 @@ static parse_result parse(parser *p, generator *g)
 
 parse_result jsnpg_parse_opt(parse_opts opts)
 {
+        // The generator we are going to use
         generator *g;
+
+        // Track generator we created so we can free it at end
         generator *new_g = NULL;
+
         parser *p;
+
         byte *bytes = opts.bytes;
         char *string = opts.string;
         size_t count = opts.count;

@@ -12,32 +12,13 @@
  */
 #include <assert.h>
 
-typedef bool (*boolean)(void *, bool);
-typedef bool (*null)(void *); 
-typedef bool (*integer)(void *, long);
-typedef bool (*real)(void *, double);
-typedef bool (*string)(void *, const unsigned char *, size_t);
-typedef bool (*key)(void *, const unsigned char *, size_t);
-typedef bool (*start_array)(void *);
-typedef bool (*end_array)(void *);
-typedef bool (*start_object)(void *);
-typedef bool (*end_object)(void *);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static bool void_boolean(void *ctx, bool boolean) { return true; }
-static bool void_null(void *ctx) { return true; }
-static bool void_integer(void *ctx, long integer) { return true; }
-static bool void_real(void *ctx, double real) { return true; }
-static bool void_string(void *ctx, const unsigned char *bytes, size_t length) { return true; }
-static bool void_key(void *ctx, const unsigned char *bytes , size_t length) { return true; }
-static bool void_start_array(void *ctx) { return true; }
-static bool void_end_array(void *ctx) { return true; }
-static bool void_start_object(void *ctx) { return true; }
-static bool void_end_object(void *ctx) { return true; }
-#pragma GCC diagnostic pop
-
+// Validators for generator structure
+// All used inside assert(...) so not required
+// when NDEBUG is defined
 #ifndef NDEBUG
+
+// Can the generator accept a value?
+// Anything but a key
 static bool can_value(generator *g)
 {
         if(g->stack.size && stack_peek(&g->stack) == STACK_OBJECT) {
@@ -52,6 +33,7 @@ static bool can_value(generator *g)
 
 }
 
+// Can the generator accept a key?
 static bool can_key(generator *g)
 {
         if(g->stack.size && !g->key_next) {
@@ -62,6 +44,8 @@ static bool can_key(generator *g)
         return true;
 }
 
+// Can the generator accept another level on the stack?
+// Pushes type on the stack and sets 'key_next' to true if STACK_OBJECT was pushed
 static bool can_push(generator *g, int type)
 {
         if(!can_value(g))
@@ -77,6 +61,10 @@ static bool can_push(generator *g, int type)
         
 }
 
+// Checks that the top of the stack is the expected type
+// Checks that it is not in object after 'key:' 
+// Pops the stack 
+// And sets 'key_next' to true if new top of stack is STACK_OBJECT
 static bool can_pop(generator *g, int type)
 {
         int cur_type;
@@ -194,6 +182,8 @@ bool jsnpg_end_object(generator *g)
         return  (!g->callbacks->end_object) ||g->callbacks->end_object(g->ctx);
 }
 
+// A generator created by the end user may have been used before so
+// make sure it is fit for purpose
 static generator *generator_reset(generator *g, unsigned flags)
 {
         g->count = 0;
@@ -202,8 +192,20 @@ static generator *generator_reset(generator *g, unsigned flags)
         return g;
 }
 
+// Create a new generator
+// Generator is a top level object so creates its own allocator
+// to manage all memory allocations performed by the generator
+// (and to free them once the generator is freed)
 static generator *generator_new(unsigned stack_size, unsigned flags)
 {
+
+#ifdef NDEBUG
+        // generator stack is only used to validate generated output 
+        // when debugging.
+        // It is ignored in NDEBUG builds
+        stack_size = 0;
+#endif
+
         allocator *a = allocator_new();
         if(!a)
                 return NULL;
@@ -248,6 +250,10 @@ void jsnpg_generator_free(generator *g)
         allocator_free(g->allocator);
 }
 
+// Creates generator configured for user specified options
+// Checks that there is at most one output type (dom or callbacks)
+// And outputs as JSON text if no output specified
+// Indent is only used for JSON text and a max limited to 8
 generator *jsnpg_generator_new_opt(generator_opts opts)
 {
         unsigned flags = opts.allow;
