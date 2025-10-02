@@ -397,7 +397,7 @@ both boast performance significantly better than that of RapidJSON but, as neith
 SAX parsing, comparison is difficult.
 
 # Availability
-Jsnpg is currently only supported on x86-64 Linux compiled with GCC.
+Jsnpg is currently only supported on x86-64 Linux using GCC as the compiler.
 
 Increasing the supported platforms and compilers will depend upon demand.
   
