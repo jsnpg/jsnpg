@@ -120,7 +120,7 @@ jsnpg_end_object(gen);
 
 
 Running out of memory or attempting to output an invalid UTF-8
-sequence can result these functions failing.  Checking the result
+sequence can in result these functions failing.  Checking the result
 of each call would be tedious but you can test at the end.
 
 ```c

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(jsnpg VERSION 0.1.0
+project(jsnpg VERSION 0.3.0
         DESCRIPTION "A JSON SAX/Pull Parser and Generator"
         LANGUAGES C)
 
