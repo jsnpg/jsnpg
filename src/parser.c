@@ -252,7 +252,7 @@ static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validat
         while(true) {
                 unsigned type;
                 byte c;
-                while((type = byte_map[(c = mis_peek(mis))]) & byte_ascii_string)
+                while((type = byte_map[(c = mis_peek(mis))]) & BYTE_ASCII_STRING)
                         mis_take(mis);
 
                 if(c == '"') {
@@ -269,34 +269,34 @@ static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validat
                                         mis_take(mis);
                         // utf8 multibyte sequences
                         // should be in separate function
-                        }else if(type & byte_leader_2) {
-                                if(!(byte_map[mis_peek(mis)] & byte_continuation))
-                                        throw_parse_error(p, jsnpg_error_utf8);
+                        }else if(type & BYTE_LEADER_2) {
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                        } else if(type & byte_leader_3) {
+                        } else if(type & BYTE_LEADER_3) {
                                 unsigned next = byte_map_extra[c];
                                 if(!(byte_map[mis_peek(mis)] & next))
-                                        throw_parse_error(p, jsnpg_error_utf8);
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                                if(!(byte_map[mis_peek(mis)] & byte_continuation))
-                                        throw_parse_error(p, jsnpg_error_utf8);
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                        } else if(type & byte_leader_4) {
+                        } else if(type & BYTE_LEADER_4) {
                                 unsigned next = byte_map_extra[c];
                                 if(!(byte_map[mis_peek(mis)] & next))
-                                        throw_parse_error(p, jsnpg_error_utf8);
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                                if(!(byte_map[mis_peek(mis)] & byte_continuation))
-                                        throw_parse_error(p, jsnpg_error_utf8);
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
-                                if(!(byte_map[mis_peek(mis)] & byte_continuation))
-                                        throw_parse_error(p, jsnpg_error_utf8);
+                                if(!(byte_map[mis_peek(mis)] & BYTE_CONTINUATION))
+                                        throw_parse_error(p, JSNPG_ERROR_UTF8);
                                 mis_take(mis);
                         } else {
-                                throw_parse_error(p, jsnpg_error_utf8);
+                                throw_parse_error(p, JSNPG_ERROR_UTF8);
                         }
                 } else { // if(c < 0x20) {
-                        throw_parse_error(p, jsnpg_error_invalid);
+                        throw_parse_error(p, JSNPG_ERROR_INVALID);
                 }
         }
 }
@@ -347,7 +347,7 @@ static json_type parse_number(parser *p, double *real_result, long *integer_resu
         unsigned dtype = byte_map_digits[*src];
 
         if(dtype > 9)
-                throw_parse_error(p, jsnpg_error_number);
+                throw_parse_error(p, JSNPG_ERROR_NUMBER);
         
         sum = dtype;
         pos = 1;
@@ -356,7 +356,7 @@ static json_type parse_number(parser *p, double *real_result, long *integer_resu
                 // 19 digits is the most that can be stored in signed long
                 while(pos < 19) {
                         dtype = byte_map_digits[src[pos++]];
-                        if(dtype > 9) goto l_dp;
+                        if(dtype > 9) goto L_DP;
                         sum = sum * 10 + dtype;
                 }
 
@@ -370,8 +370,8 @@ static json_type parse_number(parser *p, double *real_result, long *integer_resu
 
         // all pre decimal point digits have been processed
 
-l_dp: 
-        if(dtype == byte_map_digit_decimal_point) {
+L_DP: 
+        if(dtype == BYTE_MAP_DIGIT_DECIMAL_POINT) {
                 int mark = pos;
                 is_real = true;
 
@@ -379,7 +379,7 @@ l_dp:
 
                 // must have at least one digit after .
                 if(dtype > 9)
-                        throw_parse_error(p, jsnpg_error_number);
+                        throw_parse_error(p, JSNPG_ERROR_NUMBER);
 
                 // skip over 0.0000... 
                 // keeping track of size of eventual number
@@ -388,7 +388,7 @@ l_dp:
                                 exponent--;
                                 dtype = byte_map_digits[src[pos++]];
                         } while(dtype == 0);
-                        if(dtype > 9) goto l_exp;
+                        if(dtype > 9) goto L_EXP;
                 }
 
                 exponent--;
@@ -399,7 +399,7 @@ l_dp:
                 size_t max_pos = 19 + pos - mark;
                 while(pos < max_pos) {
                         dtype = byte_map_digits[src[pos++]];
-                        if(dtype > 9) goto l_exp;
+                        if(dtype > 9) goto L_EXP;
                         sum = sum * 10 + dtype;
                         exponent--;
                 }
@@ -411,19 +411,19 @@ l_dp:
 
         // all digits up to exponent now processed
         //
-l_exp:
-        if(dtype == byte_map_digit_exponent) {
+L_EXP:
+        if(dtype == BYTE_MAP_DIGIT_EXPONENT) {
                 is_real = true;
                 dtype = byte_map_digits[src[pos++]];
                 
                 // check for +- after ee
-                exp_negative = dtype == byte_map_digit_minus;
-                if(exp_negative || dtype == byte_map_digit_plus)
+                exp_negative = dtype == BYTE_MAP_DIGIT_MINUS;
+                if(exp_negative || dtype == BYTE_MAP_DIGIT_PLUS)
                         dtype = byte_map_digits[src[pos++]];
 
                 // then insist we have at least one digit
                 if(dtype > 9)
-                        throw_parse_error(p, jsnpg_error_number);
+                        throw_parse_error(p, JSNPG_ERROR_NUMBER);
 
                 exp = dtype;
                 // too many numbers after exponent will error anyway
@@ -431,7 +431,7 @@ l_exp:
                 // is just too much
                 for(int i = 0 ; i < 9 ; i++) {
                         dtype = byte_map_digits[src[pos++]];
-                        if(dtype > 9) goto l_done;
+                        if(dtype > 9) goto L_DONE;
                         exp = exp * 10 + dtype;
                 }
 
