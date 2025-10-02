@@ -14,11 +14,8 @@ failed="\e[1;31m"
 reset="\e[0m"
 
 declare -a bar_chars
-if [ -f /.dockerenv ]; then
-        bar_chars=("#")
-else    
-        bar_chars=("\u2589" "\u258A" "\u258B" "\u258C" "\u258D" "\u258E" "\u258F")
-fi
+bar_chars=("#")
+#        bar_chars=("\u2589" "\u258A" "\u258B" "\u258C" "\u258D" "\u258E" "\u258F")
 bar_char_count=${#bar_chars}
 
 complete=0
