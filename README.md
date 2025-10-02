@@ -14,7 +14,6 @@ discussed in [JSON Variants](#json-variants).
 * [Optional Macros](#optional-macros)
 * [JSON Variants](#json-variants)
 * [Pull Parsing](#pull-parsing)
-* [Testing](#testing)
 * [Performance](#performance)
 * [Availability](#vailability)
 
@@ -377,18 +376,6 @@ if(JSNPG_START_OBJECT == jsnpg_parse_next(parser)) {
 
 jsnpg_parser_free(parser);
 ```
-# Testing
-Thanks to [JSONTestSuite](https://github.com/nst/JSONTestSuite) and
-[JSON Parser Benchmark](https://github.com/miloyip/nativejson-benchmark)
-there were many test JSON files available to provide good test coverage.
-These files were supplemented by tests for particular edge cases that we
-were aware of.  There are currently 420 test files used by `make test`. 
-
-Each test file is tested for parsing via SAX, the pull-parser, and from the DOM.
-Each of these cases is tested for writing to the DOM and producing both stringified 
-and pretty printed JSON. There are curently 4200 individual tests performed
-by `make test`.  Fortunately most files are very small and running the tests only
-takes 10 seconds.
 
 # Performance
 With the demand for faster JSON parsers, research has been made into the performance
