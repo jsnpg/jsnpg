@@ -265,7 +265,7 @@ Rather than providing callbacks and context a generator created with
 `jsnpg_generator_new` can be used.
 
 # Generator Options
-This section describes the options available when craeting generators with
+This section describes the options available when creating generators with
 `jsnpg_generator_new`.
 
 If no options are specified to indicate what to generate, a JSON string 
@@ -314,7 +314,7 @@ in the `allow` option of the parser or generator.
 |------------------------------|-----------------------------------------------------|
 | JSNPG_ALLOW_COMMENTS         | Allow C style block and line comments in whitespace |
 | JSNPG_ALLOW_TRAILING_COMMAS  | Allow comma at end of objects and arrays            |
-| JSNPG_ALLOW_TRAILING_CHARS   | Allow any text in input after a successful parse      |
+| JSNPG_ALLOW_TRAILING_CHARS   | Allow any text in input after a successful parse    |
 | JSNPG_ALLOW_MULTIPLE_VALUES  | Allow multiple JSON values in input                 | 
 | JSNPG_ALLOW_INVALID_UTF8_IN  | Allow invalid UTF-8 in input                        |
 | JSNPG_ALLOW_INVALID_UTF8_OUT | Allow invalid UTF-8 in output (generator only)      |
@@ -378,11 +378,7 @@ jsnpg_parser_free(parser);
 ```
 
 # Performance
-With the demand for faster JSON parsers, research has been made into the performance
-issues.  The biggest bottleneck is parsing and formatting floating point numbers and 
-significant improvements have been made in this area.
-
-Much of the state of the art parsing code is open source and freely available.
+Much of the state of the art JSON parsing code is open source and freely available.
 Jsnpg's floating point parsing and formatting has been taken from these projects
 and modified from C++ to C.  Author copyright and license details can be
 found in the [LICENSE](https://github.com/jsnpg/jsnpg/blob/master/LICENSE). 
