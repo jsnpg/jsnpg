@@ -177,7 +177,7 @@ bool jsnpg_parse_streq(jsnpg_parser *, char *);
 // jsnpg_parse_next(p); // type: key, value: "k1"
 // jsnpg_parse_next(p); // type: begin_array
 // jsnpg_parse_next(p); // type: real, value: 12.5
-// jsnpg_parse_next(p); // type: true
+// jsnpg_parse_next(p); // type: boolean, value: true
 // jsnpg_parse_next(p); // type: end_array
 // jsnpg_parse_next(p); // type: end_object
 // jsnpg_parse_next(p); // type: EOF
@@ -204,6 +204,8 @@ typedef struct {
         char *string;
         jsnpg_dom *dom;
 
+        // Must provide either callbacks or generator, not both
+
         // Optional callbacks and callback ctx for SAX style parsing
         // This is a common use case so providing the options here
         // saves the caller having to create and free a generator themselves
@@ -211,7 +213,6 @@ typedef struct {
         void *ctx;
 
         // Optional generator
-        // Ignored if callbacks/ctx are specified
         jsnpg_generator *generator;
 
 } jsnpg_parse_opts;
@@ -226,8 +227,8 @@ jsnpg_result jsnpg_parse_opt(jsnpg_parse_opts);
 // jsnpg_parse( .allow = JSNPG_ALLOW_MULTIPLE_VALUES | JSNPG_ALLOW_COMMENTS,
 //              .bytes = my_bytes, 
 //              .count = my_byte_count, 
-//              .callbacks = my_callbacks,
-//              .ctx = my_context);
+//              .callbacks = &my_callbacks,
+//              .ctx = &my_context);
 
 
 // ------------------------------------
