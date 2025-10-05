@@ -322,7 +322,7 @@ in the `allow` option of the parser or generator.
 # Pull Parsing
 Pull parsing acts like an iterator over the JSON input, returning one item at a time.  
 Although slightly slower than SAX parsing it is possible to follow the structure of the
-input while parsing rather than relying on the conetxt passed from callback to callback.
+input while parsing rather than relying on the context passed from callback to callback.
 
 Create a parser with `jsnpg_parser_new` and call `jsnpg_parse_next` to parse
 each item in the input.  The return value from `jsnpg_parse_next` can be tested 
