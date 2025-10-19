@@ -1,0 +1,41 @@
+
+# Remove setjmp longjmp from error handling code
+This is used internally to throw parsing errors to the top level parse functions.
+Setting the handler for each call in a pull parse seems excessive so 
+test to see if it would be 'better' to return errors. 
+
+# Assert arguments
+Although the code base is well tested it would be clearer, and safer, to
+assert what we can about expected argument values.
+
+# Return single item from generator
+At the moment the user can request a c string or a length and byte array,
+and the memory for both is managed in the generator so the string is 
+invalid once the generator is freed.
+Use a structure with length and flexible array member holding null terminated
+string.  This memory would be the responsibility of the caller to free.
+Deserialization (see below) would look better with this in place.
+
+# Separate out the Allocator code
+It will be needed by the ser/deser code (see below) so it might be cleaner if
+it were a separate entity.  We do not want serde to use json parser internals.
+
+# Create proof of concept serde attributes
+Use C23 scoped attributes to generate JSON serialization/deserialization
+support similar in sprit to Rust serde/json.
+Ensure it works across main compilers (see below)
+
+# Expand compiler / platform support
+GCC, Clang, MS VSCode
+Linux 64, Win 64, ?xxBSD
+x86_64, ?Arm, ?other 
+
+# SIMD support
+Investigate how to leverage simd whilst still supporting different flavours
+of Json.  Comments are especially challenging as they conflict with the string
+parsing in simdjson.  Comments can contain double quotes and backslashes and 
+strings can contain comment characters.
+
+# Investigate and improve use of compiler flags
+Which settings would be most useful?
+How do they vary across compilers?
