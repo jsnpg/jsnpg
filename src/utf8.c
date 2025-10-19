@@ -69,6 +69,9 @@ static inline bool is_surrogate(unsigned cp)
  */      
 static void utf8_encode(unsigned cp, byte **bytes) 
 {
+        assert(bytes);
+        assert(*bytes);
+
         int shift = 0;
         byte lead_byte;
         if(cp <= _1_BYTE_MAX) {
@@ -113,6 +116,8 @@ static void utf8_encode(unsigned cp, byte **bytes)
  */
 static unsigned utf8_bom_bytes(byte *bytes, size_t count)
 {
+        assert(bytes);
+
         static unsigned bom_count = sizeof(BYTE_ORDER_MARK) / sizeof(BYTE_ORDER_MARK[0]);
         return (count >= bom_count 
                         && 0 == memcmp(BYTE_ORDER_MARK, bytes, bom_count))

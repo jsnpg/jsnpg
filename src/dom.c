@@ -50,6 +50,8 @@ struct dom_node {
 // to maintain its position in the parse
 static dom_info dom_parser_info(dom *root)
 {
+        assert(root);
+
         dom_info di;
         di.hdr = root;
         di.offset = sizeof(dom);
@@ -74,6 +76,8 @@ static inline size_t dom_alloc_size(size_t size)
 
 static dom *dom_hdr_new(allocator *a, size_t size)
 {
+        assert(a);
+
         size = dom_alloc_size(size + sizeof(dom));
 
         dom *hdr = allocator_alloc(a, size);
@@ -89,8 +93,10 @@ static dom *dom_hdr_new(allocator *a, size_t size)
         return hdr;
 }
 
-static dom_node *dom_node_next(dom *root, int nodes)
+static dom_node *dom_node_next(dom *root, unsigned nodes)
 {
+        assert(root);
+
         size_t required = dom_size_align(NODE_SIZE * nodes);
         dom *hdr = root->current;
         if(required > hdr->size - hdr->count) {
@@ -108,8 +114,10 @@ static dom_node *dom_node_next(dom *root, int nodes)
         return (dom_node *)(offset + (char *)hdr);
 }
 
-static dom_node *dom_add_type(dom *root, json_type type, int extra)
+static dom_node *dom_add_type(dom *root, json_type type, unsigned extra)
 {
+        assert(root);
+
         dom_node *node = dom_node_next(root, 1 + extra);
         if(!node)
                 return NULL;
@@ -120,6 +128,8 @@ static dom_node *dom_add_type(dom *root, json_type type, int extra)
 
 static inline dom_node *dom_add_boolean(dom *root, bool boolean)
 {
+        assert(root);
+
         dom_node *node = dom_add_type(root, JSNPG_BOOLEAN, 1);
         if(!node)
                 return NULL;
@@ -132,6 +142,8 @@ static inline dom_node *dom_add_boolean(dom *root, bool boolean)
 
 static inline dom_node *dom_add_integer(dom *root, long integer)
 {
+        assert(root);
+
         dom_node *node = dom_add_type(root, JSNPG_INTEGER, 1);
         if(!node)
                 return NULL;
@@ -144,6 +156,8 @@ static inline dom_node *dom_add_integer(dom *root, long integer)
 
 static inline dom_node *dom_add_real(dom *root, double real)
 {
+        assert(root);
+
         dom_node *node = dom_add_type(root, JSNPG_REAL, 1);
         if(!node)
                 return NULL;
@@ -156,6 +170,9 @@ static inline dom_node *dom_add_real(dom *root, double real)
 
 static inline dom_node *dom_add_bytes(dom *root, json_type type, const byte *bytes, size_t count)
 {
+        assert(root);
+        assert(bytes);
+
         dom_node *node = dom_add_type(root, type, 2);
         if(!node)
                 return NULL;
@@ -170,60 +187,80 @@ static inline dom_node *dom_add_bytes(dom *root, json_type type, const byte *byt
 
 static inline bool dom_boolean(void *ctx, bool boolean)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_boolean(root, boolean);
 }
 
 static inline bool dom_null(void *ctx)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_type(root, JSNPG_NULL, 0);
 }
 
 static inline bool dom_integer(void *ctx, long integer)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_integer(root, integer);
 }
 
 static inline bool dom_real(void *ctx, double real)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_real(root, real);
 }
 
 static inline bool dom_string(void *ctx, const byte *bytes, size_t count)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_bytes(root, JSNPG_STRING, bytes, count);
 }
 
 static inline bool dom_key(void *ctx, const byte *bytes, size_t count)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_bytes(root, JSNPG_KEY, bytes, count);
 }
 
 static inline bool dom_start_array(void *ctx)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_type(root, JSNPG_START_ARRAY, 0);
 }
 
 static inline bool dom_end_array(void *ctx)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_type(root, JSNPG_END_ARRAY, 0);
 }
 
 static inline bool dom_start_object(void *ctx)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_type(root, JSNPG_START_OBJECT, 0);
 }
 
 static inline bool dom_end_object(void *ctx)
 {
+        assert(ctx);
+
         dom *root = ctx;
         return dom_add_type(root, JSNPG_END_OBJECT, 0);
 }
@@ -244,6 +281,8 @@ static callbacks dom_callbacks = {
 
 static dom *dom_new(allocator *a, size_t size)
 {
+        assert(a);
+
         dom *root = dom_hdr_new(a, size);
         if(!root)
                 return NULL;
@@ -255,6 +294,8 @@ static dom *dom_new(allocator *a, size_t size)
 
 static generator *dom_generator(generator *g)
 {
+        assert(g);
+
         dom *root = dom_new(g->allocator, 0);
         if(!root)
                 return NULL;
@@ -265,6 +306,8 @@ static generator *dom_generator(generator *g)
 // Pull Parse from DOM
 static json_type dom_parse_next(parser *p)
 {
+        assert(p);
+
         dom *hdr = p->dom_info.hdr;
         size_t offset = p->dom_info.offset;
 
@@ -317,6 +360,9 @@ static json_type dom_parse_next(parser *p)
 // SAX parse from DOM
 static parse_result dom_parse(parser *p, generator *g)
 {
+        assert(p);
+        assert(g);
+
         // const boolean gen_boolean = g->callbacks->boolean ? g->callbacks->boolean : void_boolean;
         // for all callbacks
         DECLARE_CALLBACKS(g, gen_);
@@ -408,8 +454,6 @@ static parse_result dom_parse(parser *p, generator *g)
 }
 
 // Public API
-// Validate arguments
-
 dom *jsnpg_result_dom(generator *g)
 {
         return g ? g->ctx : NULL;

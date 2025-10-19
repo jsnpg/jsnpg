@@ -23,6 +23,8 @@ struct memory_output_stream {
 
 static memory_output_stream *mos_new(allocator *a, size_t initial_capacity)
 {
+        assert(a);
+
         memory_output_stream *mos = allocator_alloc(a, 
                                         sizeof(memory_output_stream));
         if(!mos)
@@ -41,6 +43,8 @@ static memory_output_stream *mos_new(allocator *a, size_t initial_capacity)
 
 static byte *mos_grow(memory_output_stream *mos, size_t incr)
 {
+        assert(mos);
+
         size_t size = mos->capacity 
                 ? mos->capacity << 1
                 : mos->initial_capacity;
@@ -66,6 +70,8 @@ static byte *mos_grow(memory_output_stream *mos, size_t incr)
 
 static inline byte *mos_reserve(memory_output_stream *mos, size_t count)
 {
+        assert(mos);
+
         if(count > mos->capacity - mos->count)
                 if(!mos_grow(mos, count))
                         return NULL;
@@ -77,6 +83,8 @@ static inline byte *mos_reserve(memory_output_stream *mos, size_t count)
 
 static inline bool mos_put(memory_output_stream *mos, byte chr)
 {
+        assert(mos);
+
         byte *s = mos_reserve(mos, 1);
         if(!s)
                 return false;
@@ -86,6 +94,8 @@ static inline bool mos_put(memory_output_stream *mos, byte chr)
 
 static inline bool mos_putn(memory_output_stream *mos, byte chr, size_t count)
 {
+        assert(mos);
+
         if(count) {
                 byte *s = mos_reserve(mos, count);
                 if(!s)
@@ -97,6 +107,9 @@ static inline bool mos_putn(memory_output_stream *mos, byte chr, size_t count)
 
 static inline bool mos_puts(memory_output_stream *mos, const byte *string, size_t count)
 {
+        assert(mos);
+        assert(string);
+
         byte *s = mos_reserve(mos, count);
         if(!s)
                 return false;
@@ -106,6 +119,8 @@ static inline bool mos_puts(memory_output_stream *mos, const byte *string, size_
 
 static inline void mos_adjust(memory_output_stream *mos, long amount)
 {
+        assert(mos);
+
         assert((long)(mos->count) + amount >= 0);
 
         // Keeping compilers happy
@@ -125,6 +140,10 @@ struct json_output_stream {
 
 static json_output_stream *jos_new(allocator *a, unsigned indent, generator *g)
 {       
+        assert(a);
+        assert(g);
+
+
         json_output_stream *jos = allocator_alloc(a, sizeof(json_output_stream));
         if(!jos)
                 return NULL;
@@ -145,11 +164,15 @@ static json_output_stream *jos_new(allocator *a, unsigned indent, generator *g)
 
 static inline bool jos_put(json_output_stream *jos, byte chr)
 {
+        assert(jos);
+
         return mos_put(jos->mos, chr);
 }
 
 static inline bool jos_puts(json_output_stream *jos, const byte *string, size_t count)
 {
+        assert(jos);
+
         return mos_puts(jos->mos, string, count);
 }
 
@@ -158,6 +181,8 @@ static inline size_t find_next_special(
                 size_t count, 
                 size_t start)
 {
+        assert(string);
+
         size_t i;
         for(i = start ; i < count ; i++)
                 if(!(byte_map[string[i]] & BYTE_ASCII_STRING))
@@ -167,6 +192,9 @@ static inline size_t find_next_special(
 
 static bool jos_scan_escape(json_output_stream *jos, const byte *string, size_t count)
 {
+        assert(jos);
+        assert(string);
+
         static char const * const s_escapes[] = {
                 "00", "01", "02", "03",
                 "04", "05", "06", "07",
@@ -257,6 +285,8 @@ static bool jos_scan_escape(json_output_stream *jos, const byte *string, size_t 
 
 static inline bool jos_puti(json_output_stream *jos, long integer)
 {
+        assert(jos);
+
         static unsigned buf_len = i64toa_min_buffer_length;
 
         char *s = (char *)mos_reserve(jos->mos, buf_len);
@@ -272,6 +302,8 @@ static inline bool jos_puti(json_output_stream *jos, long integer)
 
 static inline bool jos_putr(json_output_stream *jos, double real)
 {
+        assert(jos);
+
         static unsigned buf_len = dtoa_min_buffer_length;
 
         char *s = (char *)mos_reserve(jos->mos, buf_len);
@@ -288,6 +320,8 @@ static inline bool jos_putr(json_output_stream *jos, double real)
 
 static inline bool jos_indent(json_output_stream *jos)
 {
+        assert(jos);
+
         // Avoid leading newline
         if(jos->nl) {
                 if(!mos_put(jos->mos, '\n'))
@@ -301,6 +335,8 @@ static inline bool jos_indent(json_output_stream *jos)
 
 static inline bool jos_prefix(json_output_stream *jos)
 {
+        assert(jos);
+
         if(!jos->key) {
                 if(jos->comma && !mos_put(jos->mos, ','))
                         return false;
@@ -315,6 +351,8 @@ static inline bool jos_prefix(json_output_stream *jos)
 
 static inline bool jos_prefix_start(json_output_stream *jos)
 {
+        assert(jos);
+
         if(!jos_prefix(jos))
                 return false;
         jos->comma = false;
@@ -325,6 +363,8 @@ static inline bool jos_prefix_start(json_output_stream *jos)
 
 static inline bool jos_prefix_end(json_output_stream *jos)
 {
+        assert(jos);
+
         jos->level--;
 
         if(jos->comma) {
@@ -339,6 +379,8 @@ static inline bool jos_prefix_end(json_output_stream *jos)
 
 static inline bool jos_key_suffix(json_output_stream *jos)
 {
+        assert(jos);
+
         if(!mos_put(jos->mos, ':'))
                 return false;
         if(jos->indent && !mos_put(jos->mos, ' '))
@@ -350,10 +392,10 @@ static inline bool jos_key_suffix(json_output_stream *jos)
 }
 
 
-
-
 static inline bool print_null(void *ctx)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
@@ -362,6 +404,8 @@ static inline bool print_null(void *ctx)
 
 static inline bool print_boolean(void *ctx, bool boolean)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
@@ -372,6 +416,9 @@ static inline bool print_boolean(void *ctx, bool boolean)
 
 static inline bool print_string(void *ctx, const byte *bytes, size_t count)
 {
+        assert(ctx);
+        assert(bytes);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
@@ -382,6 +429,9 @@ static inline bool print_string(void *ctx, const byte *bytes, size_t count)
 
 static inline bool print_key(void *ctx, const byte *bytes, size_t count)
 {
+        assert(ctx);
+        assert(bytes);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
@@ -393,6 +443,8 @@ static inline bool print_key(void *ctx, const byte *bytes, size_t count)
 
 static inline bool print_integer(void *ctx, long integer)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
@@ -401,6 +453,8 @@ static inline bool print_integer(void *ctx, long integer)
 
 static inline bool print_real(void *ctx, double real)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix(jos)
@@ -409,6 +463,8 @@ static inline bool print_real(void *ctx, double real)
 
 static inline bool print_start_object(void *ctx)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix_start(jos)
@@ -417,6 +473,8 @@ static inline bool print_start_object(void *ctx)
 
 static inline bool print_end_object(void *ctx)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix_end(jos)
@@ -425,6 +483,8 @@ static inline bool print_end_object(void *ctx)
 
 static inline bool print_start_array(void *ctx)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix_start(jos)
@@ -433,6 +493,8 @@ static inline bool print_start_array(void *ctx)
 
 static inline bool print_end_array(void *ctx)
 {
+        assert(ctx);
+
         json_output_stream *jos = ctx;
 
         return jos_prefix_end(jos)
@@ -455,6 +517,8 @@ static callbacks print_callbacks = {
 
 static generator *json_generator(generator *g, unsigned indent)
 {
+        assert(g);
+
         json_output_stream *jos = jos_new(g->allocator, indent, g);
         if(!jos)
                 return NULL;
@@ -463,11 +527,11 @@ static generator *json_generator(generator *g, unsigned indent)
 }
 
 // Public API
-// Validate arguments
 
 char *jsnpg_result_string(generator *g)
 {
         if(!g) return NULL;
+        if(!g->ctx) return NULL;
 
         json_output_stream *jos = g->ctx;
         return jos_put(jos, '\0')
@@ -477,7 +541,7 @@ char *jsnpg_result_string(generator *g)
 
 size_t jsnpg_result_bytes(generator *g, byte **bytes_result)
 {
-        if(!g || !bytes_result || !*bytes_result) return 0;
+        if(!g || !g->ctx || !bytes_result || !*bytes_result) return 0;
 
         json_output_stream *jos = g->ctx;
         *bytes_result = jos->mos->buffer;

@@ -31,6 +31,8 @@ struct memory_input_stream {
 
 static memory_input_stream *mis_new(allocator *a, bool allow_comments)
 {
+        assert(a);
+
         memory_input_stream *mis = allocator_alloc(a, sizeof(memory_input_stream));
 
         if(!mis)
@@ -49,11 +51,16 @@ static memory_input_stream *mis_new(allocator *a, bool allow_comments)
 
 static const byte *mis_current(memory_input_stream *mis)
 {
+        assert(mis);
+
         return mis->read;
 }
 
 static void mis_set_bytes(memory_input_stream *mis, byte *bytes, size_t count)
 {
+        assert(mis);
+        assert(bytes);
+
         mis->start = bytes;
         mis->read = bytes;
         mis->count = count;
@@ -61,17 +68,25 @@ static void mis_set_bytes(memory_input_stream *mis, byte *bytes, size_t count)
 
 static inline size_t mis_tell(memory_input_stream *mis)
 {
+        assert(mis);
+
         return (size_t)(mis->read - mis->start);
 }
 
 static inline void mis_adjust(memory_input_stream *mis, byte *ptr)
 {
+        assert(mis);
+        assert(ptr);
+
         assert(0 <= ptr - mis->start && ptr - mis->start <= (long)mis->count);
+
         mis->read = ptr;
 }
 
 static inline const byte *mis_at(memory_input_stream *mis, size_t pos)
 {
+        assert(mis);
+
         if(pos >= mis->count)
                 return NULL;
 
@@ -80,6 +95,8 @@ static inline const byte *mis_at(memory_input_stream *mis, size_t pos)
 
 static inline bool mis_eof(memory_input_stream *mis)
 {
+        assert(mis);
+
         assert(mis_tell(mis) <= mis->count);
 
         return mis_tell(mis) == mis->count;
@@ -87,16 +104,22 @@ static inline bool mis_eof(memory_input_stream *mis)
 
 static inline byte mis_peek(memory_input_stream *mis)
 {
+        assert(mis);
+
         return *mis->read;
 }
 
 static inline byte mis_take(memory_input_stream *mis)
 {
+        assert(mis);
+
         return *mis->read++;
 }
 
 static inline byte mis_find(memory_input_stream *mis, byte c)
 {
+        assert(mis);
+
         byte *p = (byte *)strchr((const char *)mis->read, (char)c);
         if(!p) {
                 mis->read = mis->start + mis->count;
@@ -108,6 +131,8 @@ static inline byte mis_find(memory_input_stream *mis, byte c)
 
 static inline bool mis_consume(memory_input_stream *mis, byte b)
 {
+        assert(mis);
+
         if(*mis->read != b)
                 return false;
 
@@ -117,6 +142,8 @@ static inline bool mis_consume(memory_input_stream *mis, byte b)
 
 static inline byte mis_consume_whitespace_only(memory_input_stream *mis)
 {
+        assert(mis);
+
         byte c;
         while(byte_map[(c = mis_peek(mis))] & BYTE_WHITESPACE)
                  mis_take(mis);
@@ -125,6 +152,8 @@ static inline byte mis_consume_whitespace_only(memory_input_stream *mis)
 
 static byte mis_consume_whitespace_comments(memory_input_stream *mis)
 {
+        assert(mis);
+
         while(true) {
                 byte c = mis_consume_whitespace_only(mis);
 
@@ -157,6 +186,8 @@ static byte mis_consume_whitespace_comments(memory_input_stream *mis)
 
 static inline byte mis_consume_whitespace(memory_input_stream *mis)
 {
+        assert(mis);
+
         if(mis->allow_comments)
                 return mis_consume_whitespace_comments(mis);
         else
@@ -166,12 +197,16 @@ static inline byte mis_consume_whitespace(memory_input_stream *mis)
 
 static inline bool mis_next(memory_input_stream *mis, byte b)
 {
+        assert(mis);
+
         return *mis->read == b 
                 || mis_consume_whitespace(mis) == b;
 }
 
 static inline bool mis_consume_next(memory_input_stream *mis, byte b)
 {
+        assert(mis);
+
         if(!mis_next(mis, b))
                 return false;
         mis->read++;
@@ -231,6 +266,8 @@ static inline bool mis_consume_next(memory_input_stream *mis, byte b)
 
 static inline void mis_string_start(memory_input_stream *mis)
 {
+        assert(mis);
+
         mis->string = mis->read;
         mis->write = mis->read;
         mis->mark = mis->read;
@@ -238,6 +275,8 @@ static inline void mis_string_start(memory_input_stream *mis)
 
 static inline void mis_string_update(memory_input_stream *mis)
 {
+        assert(mis);
+
         if(mis->mark != mis->write) {
                 size_t amt = (size_t)(mis->read - mis->mark);
                 if(amt) {
@@ -251,21 +290,30 @@ static inline void mis_string_update(memory_input_stream *mis)
 
 static inline void mis_string_restart(memory_input_stream *mis)
 {
+        assert(mis);
+
         mis->mark = mis->read;
 }
 
 static inline byte **mis_writer(memory_input_stream *mis)
 {
+        assert(mis);
+
         return &mis->write;
 }
 
 static inline void mis_byte_copy(memory_input_stream *mis)
 {
+        assert(mis);
+
         *mis->write++ = *mis->read++;
 }
 
 static inline size_t mis_string_complete(memory_input_stream *mis, byte **bytes)
 {
+        assert(mis);
+        assert(bytes);
+
         size_t len;
 
         *bytes = mis->string;

@@ -39,6 +39,9 @@
 
 static void parse_generate(parser *p, generator *g)
 {
+        assert(p);
+        assert(g);
+
         // const boolean gen_boolean = g->callbacks->boolean ? g->callbacks->boolean : void_boolean;
         // for all callbacks
         DECLARE_CALLBACKS(g, gen_);
@@ -189,6 +192,9 @@ L_VALUE:
 
 static parse_result parse(parser *p, generator *g)
 {
+        assert(p);
+        assert(g);
+
         const bool multiple_values = p->flags & JSNPG_ALLOW_MULTIPLE_VALUES;
         const bool trailing_chars = p->flags & JSNPG_ALLOW_TRAILING_CHARS;
 
@@ -215,7 +221,6 @@ static parse_result parse(parser *p, generator *g)
 }
 
 // External API
-// Validate arguments
 
 parse_result jsnpg_parse_opt(parse_opts opts)
 {

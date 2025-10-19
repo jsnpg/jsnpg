@@ -21,6 +21,8 @@
 // Anything but a key
 static bool can_value(generator *g)
 {
+        assert(g);
+
         if(g->stack.size && stack_peek(&g->stack) == STACK_OBJECT) {
                 if(g->key_next) {
                         g->error = make_error(JSNPG_ERROR_EXPECTED_KEY);
@@ -36,6 +38,8 @@ static bool can_value(generator *g)
 // Can the generator accept a key?
 static bool can_key(generator *g)
 {
+        assert(g);
+
         if(g->stack.size && !g->key_next) {
                 g->error = make_error(JSNPG_ERROR_EXPECTED_VALUE);
                 return false;
@@ -48,6 +52,8 @@ static bool can_key(generator *g)
 // Pushes type on the stack and sets 'key_next' to true if STACK_OBJECT was pushed
 static bool can_push(generator *g, int type)
 {
+        assert(g);
+
         if(!can_value(g))
                 return false;
         if(g->stack.size) {
@@ -67,6 +73,8 @@ static bool can_push(generator *g, int type)
 // And sets 'key_next' to true if new top of stack is STACK_OBJECT
 static bool can_pop(generator *g, int type)
 {
+        assert(g);
+
         int cur_type;
         if(g->stack.size) {
                 cur_type = stack_peek(&g->stack);
@@ -186,6 +194,8 @@ bool jsnpg_end_object(generator *g)
 // make sure it is fit for purpose
 static generator *generator_reset(generator *g, unsigned flags)
 {
+        assert(g);
+
         g->count = 0;
         g->validate_utf8 = !(flags & JSNPG_ALLOW_INVALID_UTF8_OUT);
         g->error = (error_info) {};
@@ -234,13 +244,14 @@ static generator *generator_set_callbacks(
                 callbacks *callback_fns, 
                 void *ctx)
 {
+        assert(g);
+
         g->callbacks = callback_fns;
         g->ctx = ctx;
         return g;
 }
 
 // External API
-// Validate arguments
 
 void jsnpg_generator_free(generator *g)
 {

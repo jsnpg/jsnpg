@@ -16,21 +16,30 @@
 
 static inline bool parser_in_object(parser *p)
 {
+        assert(p);
+
         return stack_peek(&p->stack) == STACK_OBJECT;
 }
 
 static inline bool parser_in_array(parser *p)
 {
+        assert(p);
+
         return stack_peek(&p->stack) == STACK_ARRAY;
 }
 
 static size_t parse_position(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         return p->mis->start ? mis_tell(p->mis) : 0;
 }
 
 static parse_result make_parse_result(parser *p, json_type type, ...)
 {
+        assert(p);
+
         va_list ap;
         parse_result result;
         va_start(ap, type);
@@ -68,6 +77,8 @@ static parse_result make_parse_result(parser *p, json_type type, ...)
 [[noreturn]]
 static void throw_parse_error_at(parser *p, error_code code, size_t at)
 {
+        assert(p);
+
         p->result = make_error_return(code, at);
         longjmp(p->env, 1);
 }
@@ -75,11 +86,16 @@ static void throw_parse_error_at(parser *p, error_code code, size_t at)
 [[noreturn]]
 static void throw_parse_error(parser *p, error_code code)
 {
+        assert(p);
+
         throw_parse_error_at(p, code, parse_position(p));
 }
 
 static inline int parse_start_object(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         assert(mis_peek(p->mis) == '{');
 
         mis_take(p->mis);
@@ -90,6 +106,9 @@ static inline int parse_start_object(parser *p)
 
 static inline int parse_end_object(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         assert(mis_peek(p->mis) == '}');
         assert(stack_peek(&p->stack) == STACK_OBJECT);
 
@@ -103,6 +122,9 @@ static inline int parse_end_object(parser *p)
 
 static inline int parse_start_array(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         assert(mis_peek(p->mis) == '[');
 
         mis_take(p->mis);
@@ -113,6 +135,9 @@ static inline int parse_start_array(parser *p)
 
 static inline int  parse_end_array(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         assert(mis_peek(p->mis) == ']');
         assert(stack_peek(&p->stack) == STACK_ARRAY);
 
@@ -126,6 +151,9 @@ static inline int  parse_end_array(parser *p)
 
 static inline void parse_true(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         memory_input_stream *const mis = p->mis;
 
         assert(mis_peek(mis) == 't');
@@ -139,6 +167,9 @@ static inline void parse_true(parser *p)
 
 static inline void parse_false(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         memory_input_stream *const mis = p->mis;
 
         assert(mis_peek(mis) == 'f');
@@ -153,6 +184,9 @@ static inline void parse_false(parser *p)
 
 static inline void parse_null(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         memory_input_stream *const mis = p->mis;
 
         assert(mis_peek(mis) == 'n');
@@ -168,6 +202,9 @@ static inline void parse_null(parser *p)
 // Allows 0-9, a-f, A-F
 static unsigned parse_hex4(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         memory_input_stream *const mis = p->mis;
 
         unsigned codepoint = 0;
@@ -193,6 +230,9 @@ static unsigned parse_hex4(parser *p)
 // the correct codepoint
 static unsigned parse_escape(parser *p)
 {
+        assert(p);
+        assert(p->mis);
+
         static const unsigned char escape[256] = {
                 ['"'] = '"',  ['/'] = '/',  ['\\'] = '\\', ['b'] = '\b', 
                 ['f'] = '\f', ['n'] = '\n', ['r'] = '\r',  ['t'] = '\t'
@@ -245,6 +285,10 @@ static unsigned parse_escape(parser *p)
 // Returns length of string and sets string bytes in out param <bytes>
 static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validate_utf8)
 {
+        assert(p);
+        assert(bytes);
+        assert(p->mis);
+        
         memory_input_stream *const mis = p->mis;
 
         mis_string_start(mis);
@@ -303,6 +347,10 @@ static size_t parse_string_in_stream(parser *p, byte **bytes, const bool validat
 
 static inline size_t parse_string(parser *p, byte **bytes, const bool validate_utf8)
 {
+        assert(p);
+        assert(bytes);
+        assert(p->mis);
+
         assert(mis_peek(p->mis) == '"');
 
         mis_take(p->mis); // "
@@ -322,6 +370,11 @@ static inline size_t parse_string(parser *p, byte **bytes, const bool validate_u
 
 static json_type parse_number(parser *p, double *real_result, long *integer_result)
 {
+        assert(p);
+        assert(real_result);
+        assert(integer_result);
+        assert(p->mis);
+
         uint64_t sum = 0;
         size_t pos = 0;
         int exponent = 0;
@@ -489,6 +542,9 @@ L_DONE:
 
 static byte *copy_bytes(allocator *a, byte *bytes, size_t count)
 {
+        assert(a);
+        assert(bytes);
+
         byte *b = allocator_alloc(a, count + JSNPG_WRITEABLE_PADDING);
         if(b)
                 memcpy(b, bytes, count);
@@ -500,6 +556,10 @@ static byte *copy_bytes(allocator *a, byte *bytes, size_t count)
 // and, if the bytes are not writeable, makes a writeable (+padded) copy
 static parser *parser_set_bytes(parser *p, byte *bytes, size_t count, bool writeable)
 {
+        assert(p);
+        assert(bytes);
+        assert(p->mis);
+
         // Skip leading byte order mark
         unsigned skip = utf8_bom_bytes(bytes, count);
         bytes += skip;
@@ -526,12 +586,16 @@ static parser *parser_set_bytes(parser *p, byte *bytes, size_t count, bool write
 // For a DOM pull parse the parser needs to keep track of where it is up to
 static parser *parser_set_dom_info(parser *p, dom_info di)
 {
+        assert(p);
+
         p->dom_info = di;
         return p;
 }
 
 static parser *parser_new(allocator *a, unsigned stack_size, unsigned flags)
 {
+        assert(a);
+
         // The bit stack (keeps track of object/array nesting)
         // Is allocated space directly after the parser struct
         size_t struct_bytes = sizeof(parser);
@@ -560,7 +624,6 @@ static parser *parser_new(allocator *a, unsigned stack_size, unsigned flags)
 }
 
 // External API calls
-// Make sure to check valid arguments
 
 bool jsnpg_parse_streq(parser *p, char *str)
 {

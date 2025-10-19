@@ -13,6 +13,8 @@
 
 static inline int stack_peek(stack *s)
 {
+        assert(s);
+
         if(s->ptr == 0)
                 return -1;
         unsigned sp = s->ptr - 1;
@@ -21,6 +23,8 @@ static inline int stack_peek(stack *s)
 
 static inline int stack_pop(stack *s) 
 {
+        assert(s);
+
         if(s->ptr == 0)
                 return -1;
         else if(s->ptr == 1) {
@@ -36,6 +40,8 @@ static inline int stack_pop(stack *s)
 
 static inline int stack_push(stack *s, int type) 
 {
+        assert(s);
+
         unsigned sp = s->ptr;
         if(sp >= s->size) 
                 return -1;

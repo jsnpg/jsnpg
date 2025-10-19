@@ -42,6 +42,8 @@ static inline parse_state state_change_value(parse_state state)
 
 static inline parse_state state_change_end(parser *p)
 {
+        assert(p);
+
         if(parser_in_object(p)) return STATE_KEY_VALUE; 
         if(parser_in_array(p)) return STATE_ARRAY_VALUE; 
         return STATE_DONE;
@@ -49,6 +51,8 @@ static inline parse_state state_change_end(parser *p)
 
 static inline json_type accept_boolean(parser *p, bool boolean)
 {
+        assert(p);
+
         p->state = state_change_value(p->state);
         p->result = make_parse_result(p, JSNPG_BOOLEAN, boolean);
         return p->result.type;
@@ -56,6 +60,8 @@ static inline json_type accept_boolean(parser *p, bool boolean)
 
 static inline json_type accept_null(parser *p)
 {
+        assert(p);
+
         p->state = state_change_value(p->state);
         p->result = make_parse_result(p, JSNPG_NULL);
         return p->result.type;
@@ -63,6 +69,8 @@ static inline json_type accept_null(parser *p)
 
 static inline json_type accept_integer(parser *p, long integer)
 {
+        assert(p);
+
         p->state = state_change_value(p->state);
         p->result = make_parse_result(p, JSNPG_INTEGER, integer);
         return p->result.type;
@@ -70,6 +78,8 @@ static inline json_type accept_integer(parser *p, long integer)
 
 static inline json_type accept_real(parser *p, double real)
 {
+        assert(p);
+
         p->state = state_change_value(p->state);
         p->result = make_parse_result(p, JSNPG_REAL, real);
         return p->result.type;
@@ -77,6 +87,9 @@ static inline json_type accept_real(parser *p, double real)
 
 static inline json_type accept_string(parser *p, byte *bytes, size_t count)
 {
+        assert(p);
+        assert(bytes);
+
         p->state = state_change_value(p->state);
         p->result = make_parse_result(p, JSNPG_STRING, bytes, count);
         return p->result.type;
@@ -84,6 +97,9 @@ static inline json_type accept_string(parser *p, byte *bytes, size_t count)
 
 static inline json_type accept_key(parser *p, byte *bytes, size_t count)
 {
+        assert(p);
+        assert(bytes);
+
         p->state = STATE_KEY;
         p->result = make_parse_result(p, JSNPG_KEY, bytes, count);
         return p->result.type;
@@ -91,6 +107,8 @@ static inline json_type accept_key(parser *p, byte *bytes, size_t count)
 
 static inline json_type accept_start_object(parser *p)
 {
+        assert(p);
+
         p->state = STATE_OBJECT;
         p->result = make_parse_result(p, JSNPG_START_OBJECT);
         return p->result.type;
@@ -98,6 +116,8 @@ static inline json_type accept_start_object(parser *p)
 
 static inline json_type accept_end_object(parser *p)
 {
+        assert(p);
+
         p->state = state_change_end(p);
         p->result = make_parse_result(p, JSNPG_END_OBJECT);
         return p->result.type;
@@ -105,6 +125,8 @@ static inline json_type accept_end_object(parser *p)
 
 static inline json_type accept_start_array(parser *p)
 {
+        assert(p);
+
         p->state = STATE_ARRAY;
         p->result = make_parse_result(p, JSNPG_START_ARRAY);
         return p->result.type;
@@ -112,6 +134,8 @@ static inline json_type accept_start_array(parser *p)
 
 static inline json_type accept_end_array(parser *p)
 {
+        assert(p);
+
         p->state = state_change_end(p);
         p->result = make_parse_result(p, JSNPG_END_ARRAY);
         return p->result.type;
@@ -119,12 +143,16 @@ static inline json_type accept_end_array(parser *p)
 
 static inline json_type accept_eof(parser *p)
 {
+        assert(p);
+
         p->result = make_parse_result(p, JSNPG_EOF);
         return p->result.type;
 }
 
 static json_type parse_next(parser *p)
 {
+        assert(p);
+
         memory_input_stream *const mis = p->mis;
         const bool validate_utf8 = !(p->flags & JSNPG_ALLOW_INVALID_UTF8_IN);
         
@@ -273,6 +301,8 @@ static json_type parse_next(parser *p)
 
 static json_type parser_parse_next(parser *p)
 {
+        assert(p);
+
         if(0 == setjmp(p->env))
                 return parse_next(p);
 
@@ -280,7 +310,6 @@ static json_type parser_parse_next(parser *p)
 }
 
 // External API
-// Validate arguments
 
 json_type jsnpg_parse_next(parser *p)
 {

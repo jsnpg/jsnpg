@@ -57,6 +57,9 @@ static parse_result make_error_return(error_code code, size_t at)
 // If so, report the generator error
 static parse_result make_pg_error_return(parser *p, generator *g)
 {
+        assert(p);
+        assert(g);
+
         parse_result r = p->result;
         if(r.type == JSNPG_ERROR) {
                 // Terminations come from generator
